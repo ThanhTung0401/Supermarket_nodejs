@@ -1,0 +1,304 @@
+// schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql" // Khuyến nghị dùng PostgreSQL cho các phép tính tiền tệ chính xác
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// 1. ENUMS (Định nghĩa các trạng thái)
+// ==========================================
+
+enum Role {
+  ADMIN       // Toàn quyền
+  MANAGER     // Quản lý cửa hàng
+  CASHIER     // Thu ngân
+  WAREHOUSE   // Thủ kho
+}
+
+enum PaymentMethod {
+  CASH          // Tiền mặt
+  BANK_TRANSFER // Chuyển khoản
+  CREDIT_CARD   // Thẻ tín dụng
+  COD           // Thanh toán khi nhận hàng (cho Online)
+}
+
+enum StockChangeType {
+  IMPORT      // Nhập hàng
+  SELL        // Bán hàng
+  RETURN      // Khách trả lại
+  DAMAGE      // Hư hỏng/Xuất hủy
+  AUDIT       // Kiểm kê cân bằng kho
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+// Trạng thái đơn hàng (Quan trọng cho bán Online)
+enum OrderStatus {
+  PENDING    // Mới đặt (Online), chờ duyệt
+  CONFIRMED  // Đã duyệt, đang đóng gói
+  SHIPPING   // Đang giao
+  COMPLETED  // Đã nhận / Đã thanh toán xong (POS mặc định là cái này)
+  CANCELLED  // Đã hủy
+}
+
+// Nguồn đơn hàng
+enum OrderSource {
+  POS       // Tại quầy
+  ONLINE    // Qua Web/App
+}
+
+// ==========================================
+// 2. USER & AUTH (Nhân viên)
+// ==========================================
+
+model User {
+  id             Int             @id @default(autoincrement())
+  email          String          @unique
+  password       String
+  fullName       String
+  phone          String?
+  role           Role            @default(CASHIER)
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+
+  // Quan hệ
+  invoices       Invoice[]       // Hóa đơn nhân viên xử lý
+  importReceipts ImportReceipt[] // Phiếu nhập nhân viên tạo
+  workShifts     WorkShift[]     // Ca làm việc
+  stockLogs      StockLog[]      // Log kho do nhân viên gây ra
+}
+
+// ==========================================
+// 3. PRODUCT & CATEGORY (Hàng hóa)
+// ==========================================
+
+model Category {
+  id          Int       @id @default(autoincrement())
+  name        String
+  products    Product[]
+}
+
+model Product {
+  id              Int       @id @default(autoincrement())
+  name            String
+  barcode         String    @unique // Mã vạch để scan
+  description     String?
+  imageUrl        String?
+
+  // Giá & Quy cách
+  importPrice     Decimal   @db.Decimal(15, 2) // Giá vốn bình quân (Weighted Average Cost)
+  retailPrice     Decimal   @db.Decimal(15, 2) // Giá bán lẻ niêm yết
+  unit            String    @default("cái")    // Đơn vị tính (kg, hộp, lon)
+  packingQuantity Float     @default(1)        // Quy cách (VD: 6 lon/lốc -> packingQty = 6)
+
+  // Kho
+  stockQuantity   Int       @default(0)        // Tồn kho thực tế (theo SKU bán)
+  minStockLevel   Int       @default(10)       // Mức cảnh báo
+
+  categoryId      Int
+  category        Category  @relation(fields: [categoryId], references: [id])
+  isActive        Boolean   @default(true)     // Soft delete
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  invoiceItems    InvoiceItem[]
+  importItems     ImportItem[]
+  stockLogs       StockLog[]
+  returnItems     ReturnItem[]
+}
+
+// ==========================================
+// 4. PARTNERS (Đối tác & Khách hàng)
+// ==========================================
+
+model Supplier {
+  id             Int             @id @default(autoincrement())
+  name           String
+  phone          String?
+  email          String?
+  address        String?
+  importReceipts ImportReceipt[]
+}
+
+model Customer {
+  id        Int       @id @default(autoincrement())
+  name      String?
+  phone     String    @unique // SĐT dùng làm tên đăng nhập Online
+  password  String?   // Mật khẩu (Nếu khách có tài khoản Online)
+  email     String?
+  address   String?   // Địa chỉ giao hàng mặc định
+  points    Int       @default(0) // Điểm tích lũy
+
+  invoices  Invoice[]
+}
+
+// ==========================================
+// 5. INVENTORY (Kho & Nhập hàng)
+// ==========================================
+
+model ImportReceipt {
+  id          Int          @id @default(autoincrement())
+  code        String       @unique
+  supplierId  Int
+  supplier    Supplier     @relation(fields: [supplierId], references: [id])
+  staffId     Int
+  staff       User         @relation(fields: [staffId], references: [id])
+
+  totalCost   Decimal      @db.Decimal(15, 2)
+  note        String?
+  createdAt   DateTime     @default(now())
+
+  details     ImportItem[]
+  stockLogs   StockLog[]   // Link log để biết nhập từ phiếu nào
+}
+
+model ImportItem {
+  id              Int           @id @default(autoincrement())
+  importReceiptId Int
+  importReceipt   ImportReceipt @relation(fields: [importReceiptId], references: [id])
+  productId       Int
+  product         Product       @relation(fields: [productId], references: [id])
+
+  quantity        Int
+  unitCost        Decimal       @db.Decimal(15, 2) // Giá nhập tại thời điểm đó
+  totalCost       Decimal       @db.Decimal(15, 2)
+}
+
+// Thẻ kho (Audit Log - Quan trọng nhất hệ thống kho)
+model StockLog {
+  id              Int             @id @default(autoincrement())
+  productId       Int
+  product         Product         @relation(fields: [productId], references: [id])
+  staffId         Int?            // Có thể null nếu hệ thống tự động (ít gặp)
+  staff           User?           @relation(fields: [staffId], references: [id])
+
+  changeType      StockChangeType
+  changeQuantity  Int             // Số âm (xuất) hoặc dương (nhập)
+  currentStock    Int             // Snapshot tồn kho lúc đó
+
+  // Nguồn gốc log
+  importReceiptId Int?
+  importReceipt   ImportReceipt?  @relation(fields: [importReceiptId], references: [id])
+  invoiceId       Int?
+  invoice         Invoice?        @relation(fields: [invoiceId], references: [id])
+  returnInvoiceId Int?
+  returnInvoice   ReturnInvoice?  @relation(fields: [returnInvoiceId], references: [id])
+
+  note            String?
+  createdAt       DateTime        @default(now())
+}
+
+// ==========================================
+// 6. SALES, POS & OMNICHANNEL
+// ==========================================
+
+// Ca làm việc (Dùng cho POS)
+model WorkShift {
+  id            Int       @id @default(autoincrement())
+  staffId       Int
+  staff         User      @relation(fields: [staffId], references: [id])
+
+  startTime     DateTime  @default(now())
+  endTime       DateTime?
+
+  initialCash   Decimal   @default(0) @db.Decimal(15, 2) // Tiền đầu ca
+  systemRevenue Decimal?  @db.Decimal(15, 2) // Tổng doanh thu tiền mặt hệ thống tính
+  actualCash    Decimal?  @db.Decimal(15, 2) // Tiền thực tế trong két
+  difference    Decimal?  @db.Decimal(15, 2) // Chênh lệch
+
+  note          String?
+  invoices      Invoice[]
+}
+
+model Invoice {
+  id             Int           @id @default(autoincrement())
+  code           String        @unique // Mã hóa đơn (HD-xxxxx)
+
+  // Thông tin đơn hàng
+  status         OrderStatus   @default(COMPLETED)
+  source         OrderSource   @default(POS)
+  paymentMethod  PaymentMethod @default(CASH)
+  deliveryAddress String?      // Cho đơn online
+
+  // Nhân sự & Khách
+  staffId        Int?          // Null nếu khách tự đặt Online
+  staff          User?         @relation(fields: [staffId], references: [id])
+  customerId     Int?
+  customer       Customer?     @relation(fields: [customerId], references: [id])
+  workShiftId    Int?
+  workShift      WorkShift?    @relation(fields: [workShiftId], references: [id])
+
+  // Tiền
+  totalAmount    Decimal       @db.Decimal(15, 2)
+  discountAmount Decimal       @default(0) @db.Decimal(15, 2)
+  voucherId      Int?
+  voucher        Voucher?      @relation(fields: [voucherId], references: [id])
+
+  createdAt      DateTime      @default(now())
+
+  items          InvoiceItem[]
+  stockLogs      StockLog[]
+  returnInvoice  ReturnInvoice?
+}
+
+model InvoiceItem {
+  id          Int      @id @default(autoincrement())
+  invoiceId   Int
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id])
+  productId   Int
+  product     Product  @relation(fields: [productId], references: [id])
+
+  quantity    Int
+  unitPrice   Decimal  @db.Decimal(15, 2)
+  totalPrice  Decimal  @db.Decimal(15, 2)
+}
+
+// ==========================================
+// 7. MARKETING & RETURNS
+// ==========================================
+
+model Voucher {
+  id            Int           @id @default(autoincrement())
+  code          String        @unique
+  type          DiscountType
+  value         Decimal       @db.Decimal(15, 2)
+  minOrderValue Decimal?
+  maxDiscount   Decimal?
+  startDate     DateTime
+  endDate       DateTime
+  isActive      Boolean       @default(true)
+  usedCount     Int           @default(0)
+  invoices      Invoice[]
+}
+
+model ReturnInvoice {
+  id           Int           @id @default(autoincrement())
+  invoiceId    Int           @unique
+  invoice      Invoice       @relation(fields: [invoiceId], references: [id])
+
+  refundAmount Decimal       @db.Decimal(15, 2)
+  reason       String?
+  createdAt    DateTime      @default(now())
+
+  items        ReturnItem[]
+  stockLogs    StockLog[]
+}
+
+model ReturnItem {
+  id              Int           @id @default(autoincrement())
+  returnInvoiceId Int
+  returnInvoice   ReturnInvoice @relation(fields: [returnInvoiceId], references: [id])
+  productId       Int
+  product         Product       @relation(fields: [productId], references: [id])
+
+  quantity        Int
+  isRestocked     Boolean       @default(true) // Có nhập lại kho bán không?
+}
