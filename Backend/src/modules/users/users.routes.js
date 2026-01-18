@@ -1,1 +1,20 @@
-// Users Routes
+import {UsersController} from './users.controller.js';
+import express from 'express';
+import {protect} from "../../middlewares/auth.middleware.js";
+import {restrictTo} from "../../middlewares/role.middleware.js";
+
+const router = express.Router();
+const usersController = new UsersController();
+
+// Tất cả các route dưới đây đều yêu cầu đăng nhập
+router.use(protect);
+
+// Chỉ Admin và Manager mới xem được danh sách nhân viên
+router.get('/', restrictTo('ADMIN', 'MANAGER'), usersController.getAll);
+
+// Admin toàn quyền sửa/khóa
+router.get('/:id', restrictTo('ADMIN', 'MANAGER'), usersController.getOne);
+router.patch('/:id', restrictTo('ADMIN'), usersController.update);
+router.patch('/:id/toggle-active', restrictTo('ADMIN'), usersController.toggleActive);
+
+export default router;
