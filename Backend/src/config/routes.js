@@ -1,6 +1,7 @@
 // Import Routes
 import userAuthRoutes from '../modules/auth/user/user.routes.js';
 import customerAuthRoutes from '../modules/auth/customer/customer.routes.js';
+import usersRoutes from '../modules/users/users.routes.js';
 
 /**
  * Setup tất cả các routes của ứng dụng
@@ -10,6 +11,7 @@ export const setupRoutes = (app) => {
     // --- Routes Mounting ---
     app.use('/api/auth/user', userAuthRoutes);
     app.use('/api/auth/customer', customerAuthRoutes);
+    app.use('/api/users', usersRoutes);
 
     // Route mặc định kiểm tra server
     app.get('/', (req, res) => {
