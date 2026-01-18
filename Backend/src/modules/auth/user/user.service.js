@@ -1,8 +1,8 @@
 import bcrypt from 'bcryptjs';
-import prisma from '../../config/prisma.js';
-import ApiError from '../../utils/ApiError.js';
+import prisma from '../../../config/prisma.js';
+import ApiError from '../../../utils/ApiError.js';
 
-class AuthService {
+class UserAuthService {
     async register(data) {
         // 1. Kiểm tra email tồn tại
         const existingUser = await prisma.user.findUnique({
@@ -13,7 +13,7 @@ class AuthService {
         // 2. Mã hóa mật khẩu
         const hashedPassword = await bcrypt.hash(data.password, 12);
 
-        // 3. Tạo user mới
+        // 3. Tạo user mới (nhân viên)
         const newUser = await prisma.user.create({
             data: {
                 fullName: data.fullName,
@@ -52,4 +52,4 @@ class AuthService {
     }
 }
 
-export default new AuthService();
+export default new UserAuthService();
