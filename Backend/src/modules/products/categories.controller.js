@@ -26,4 +26,15 @@ export class CategoriesController {
             next(error);
         }
     }
+
+    getOne = async (req, res, next) => {
+        try {
+            const { id } = req.params;
+            const category = await this.productsService.getCategoryById(id);
+            res.status(200).json({ status: 'success', data: category });
+        } catch (error) {
+            next(error);
+        }
+    }
+
 }

@@ -5,8 +5,8 @@ import { restrictTo } from '../../../middlewares/role.middleware.js';
 
 const router = express.Router();
 
-router.post('/register', customerAuthController.register);
-router.post('/login', customerAuthController.login);
-router.post('/logout', customerAuthController.logout);
+router.post('/register', customerAuthController.register); // Đăng ký khách hàng
+router.post('/login', customerAuthController.login);       // Đăng nhập khách hàng
+router.post('/logout', customerAuthController.logout);     // Đăng xuất
 
 export default router;

@@ -10,12 +10,12 @@ const suppliersController = new SuppliersController();
 router.use(protect);
 
 // Chỉ Admin, Manager và Warehouse mới được quản lý nhà cung cấp
-router.get('/suppliers', restrictTo('ADMIN', 'MANAGER', 'WAREHOUSE'), suppliersController.getAll);
-router.get('/supplier/:id', restrictTo('ADMIN', 'MANAGER', 'WAREHOUSE'), suppliersController.getOne);
+router.get('/suppliers', restrictTo('ADMIN', 'MANAGER', 'WAREHOUSE'), suppliersController.getAll);    // Lấy danh sách nhà cung cấp (có filter) (ADMIN, MANAGER, WAREHOUSE)
+router.get('/supplier/:id', restrictTo('ADMIN', 'MANAGER', 'WAREHOUSE'), suppliersController.getOne); // Lấy chi tiết nhà cung cấp
 
 // Chỉ Admin và Manager mới được tạo/sửa/xóa nhà cung cấp
-router.post('/supplier', restrictTo('ADMIN', 'MANAGER'), suppliersController.create);
-router.patch('/supplier/:id', restrictTo('ADMIN', 'MANAGER'), suppliersController.update);
-router.delete('/supplier/:id', restrictTo('ADMIN'), suppliersController.delete);
+router.post('/supplier', restrictTo('ADMIN', 'MANAGER'), suppliersController.create);                 // Tạo nhà cung cấp (ADMIN, MANAGER)
+router.patch('/supplier/:id', restrictTo('ADMIN', 'MANAGER'), suppliersController.update);            // Cập nhật nhà cung cấp (ADMIN, MANAGER)
+router.delete('/supplier/:id', restrictTo('ADMIN'), suppliersController.delete);                      // Xóa nhà cung cấp (ADMIN)
 
 export default router;
