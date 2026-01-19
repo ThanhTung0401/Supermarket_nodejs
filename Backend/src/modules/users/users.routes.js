@@ -16,5 +16,7 @@ router.get('/', restrictTo('ADMIN', 'MANAGER'), usersController.getAll);
 router.get('/:id', restrictTo('ADMIN', 'MANAGER'), usersController.getOne);
 router.patch('/:id', restrictTo('ADMIN'), usersController.update);
 router.patch('/:id/toggle-active', restrictTo('ADMIN'), usersController.toggleActive);
+router.delete('/:id', restrictTo('ADMIN'), usersController.delete);
+
 
 export default router;

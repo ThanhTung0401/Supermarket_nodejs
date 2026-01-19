@@ -61,4 +61,17 @@ export class UsersController {
             next(error);
         }
     };
+
+    delete = async (req, res, next) => {
+        try {
+            const user = await this.usersService.deleteUser(req.params.id);
+            res.status(200).json({
+                status: 'success',
+                message: user.message,
+            })
+        }
+        catch (error) {
+            next(error);
+        }
+    }
 }

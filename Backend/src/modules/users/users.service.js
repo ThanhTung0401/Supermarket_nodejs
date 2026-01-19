@@ -1,5 +1,6 @@
 import prisma from '../../config/prisma.js';
 import ApiError from '../../utils/ApiError.js';
+import bcrypt from 'bcryptjs'
 
 export class UsersService {
     async getAllUsers(query) {
@@ -79,5 +80,16 @@ export class UsersService {
                 isActive: true
             }
         });
+    }
+
+    async deleteUser(id) {
+        const user = await this.getUserById(id);
+
+        await prisma.user.delete({
+            where: { id: parseInt(id) }
+        })
+        return {
+            message: 'User deleted successfully'
+        }
     }
 }
