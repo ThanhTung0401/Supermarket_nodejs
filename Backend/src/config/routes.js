@@ -4,6 +4,7 @@ import customerAuthRoutes from '../modules/auth/customer/customer.routes.js';
 import usersRoutes from '../modules/users/users.routes.js';
 import partnersRoutes from '../modules/partners/partners.routes.js';
 import productsRoutes from '../modules/products/products.routes.js';
+import inventoryRoutes from '../modules/inventory/inventory.routes.js';
 
 /**
  * Setup tất cả các routes của ứng dụng
@@ -16,6 +17,7 @@ export const setupRoutes = (app) => {
     app.use('/api/users', usersRoutes);
     app.use('/api/partners', partnersRoutes);
     app.use('/api/products', productsRoutes);
+    app.use('/api/inventory', inventoryRoutes);
 
     // Route mặc định kiểm tra server
     app.get('/', (req, res) => {

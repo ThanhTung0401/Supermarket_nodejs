@@ -67,7 +67,6 @@ export class ProductsService {
             data: {
                 name: data.name,
                 barcode: data.barcode,
-                importPrice: data.importPrice || 0,
                 retailPrice: data.retailPrice,
                 stockQuantity: 0,
                 categoryId: parseInt(data.categoryId),
