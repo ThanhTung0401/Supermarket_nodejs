@@ -170,24 +170,44 @@ Quản lý nhập hàng và tồn kho.
 *   **Method:** `POST`
 *   **Access:** `ADMIN`, `MANAGER`, `WAREHOUSE`
 *   **Body:**
-    ```json
-    {
-      "supplierId": 1,
-      "note": "Nhập hàng đầu tháng",
-      "items": [
+    *   **Trường hợp 1: Nhập hàng cho sản phẩm đã có**
+        ```json
         {
-          "productId": 1,
-          "quantity": 100,
-          "unitCost": 8000
-        },
-        {
-          "productId": 2,
-          "quantity": 50,
-          "unitCost": 5000
+          "supplierId": 1,
+          "note": "Nhập hàng đầu tháng",
+          "items": [
+            {
+              "productId": 1,
+              "quantity": 100,
+              "unitCost": 8000
+            }
+          ]
         }
-      ]
-    }
-    ```
+        ```
+    *   **Trường hợp 2: Nhập hàng cho sản phẩm MỚI HOÀN TOÀN**
+        ```json
+        {
+          "supplierId": 1,
+          "note": "Nhập sản phẩm mới",
+          "items": [
+            {
+              "isNewProduct": true,
+              "quantity": 50,
+              "unitCost": 15000,
+              "productData": {
+                "name": "Bánh Quy Bơ Mới",
+                "barcode": "893123456789",
+                "categoryId": 2,
+                "retailPrice": 25000,
+                "unit": "hộp",
+                "minStockLevel": 20,
+                "description": "Bánh quy bơ nhập khẩu",
+                "imageUrl": "http://..."
+              }
+            }
+          ]
+        }
+        ```
 
 ### Get Import History
 *   **URL:** `/inventory/import`
@@ -274,4 +294,3 @@ Quản lý thông tin nhà cung cấp.
 *   **URL:** `/partners/supplier/:id`
 *   **Method:** `DELETE`
 *   **Access:** `ADMIN`
-
