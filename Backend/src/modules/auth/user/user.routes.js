@@ -6,8 +6,8 @@ import { restrictTo } from '../../../middlewares/role.middleware.js';
 const router = express.Router();
 
 // Chỉ Admin hoặc Manager mới được tạo nhân viên mới
-router.post('/register', userAuthController.register);
-router.post('/login', userAuthController.login);
-router.post('/logout', userAuthController.logout);
+router.post('/register', userAuthController.register); // Tạo nhân viên mới (cần quyền)
+router.post('/login', userAuthController.login);       // Đăng nhập nội bộ
+router.post('/logout', userAuthController.logout);     // Đăng xuất
 
 export default router;
