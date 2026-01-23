@@ -294,3 +294,67 @@ Quản lý thông tin nhà cung cấp.
 *   **URL:** `/partners/supplier/:id`
 *   **Method:** `DELETE`
 *   **Access:** `ADMIN`
+
+---
+
+## 6. Customers Module (Khách hàng)
+Quản lý thông tin khách hàng và lịch sử mua hàng.
+
+### A. Dành cho Nhân viên (Staff)
+*Base URL: `/api/customers`*
+
+#### Get All Customers (Tìm kiếm)
+*   **URL:** `/customers`
+*   **Method:** `GET`
+*   **Access:** `ADMIN`, `MANAGER`, `CASHIER`
+*   **Query Params:** `search` (Tên, SĐT, Email)
+
+#### Create Customer (Tạo nhanh tại quầy)
+*   **URL:** `/customers`
+*   **Method:** `POST`
+*   **Access:** `ADMIN`, `MANAGER`, `CASHIER`
+*   **Body:**
+    ```json
+    {
+      "name": "Khách lẻ",
+      "phone": "0909000111"
+    }
+    ```
+
+#### Get Customer Detail
+*   **URL:** `/customers/:id`
+*   **Method:** `GET`
+*   **Access:** `ADMIN`, `MANAGER`, `CASHIER`
+
+#### Get Customer Purchase History
+*   **URL:** `/customers/:id/invoices`
+*   **Method:** `GET`
+*   **Access:** `ADMIN`, `MANAGER`, `CASHIER`
+
+#### Update Customer
+*   **URL:** `/customers/:id`
+*   **Method:** `PATCH`
+*   **Access:** `ADMIN`, `MANAGER`, `CASHIER`
+
+#### Delete Customer
+*   **URL:** `/customers/:id`
+*   **Method:** `DELETE`
+*   **Access:** `ADMIN`
+
+### B. Dành cho Khách hàng (End-User)
+*Base URL: `/api/customer`*
+
+#### Get My Profile
+*   **URL:** `/customer/profile/me`
+*   **Method:** `GET`
+*   **Access:** `Customer`
+
+#### Update My Profile
+*   **URL:** `/customer/profile/me`
+*   **Method:** `PATCH`
+*   **Access:** `Customer`
+
+#### Get My Purchase History
+*   **URL:** `/customer/profile/history`
+*   **Method:** `GET`
+*   **Access:** `Customer`
