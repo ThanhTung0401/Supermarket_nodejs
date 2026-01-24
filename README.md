@@ -51,7 +51,45 @@ Quản lý đăng nhập, đăng ký và xác thực nhân viên.
 
 ---
 
-## 2. Users Module (Quản lý nhân viên)
+## 2. Auth Module (Khách hàng)
+Quản lý đăng ký và đăng nhập cho khách hàng (Customer).
+
+### Register (Đăng ký tài khoản khách hàng)
+*   **URL:** `/auth/customer/register`
+*   **Method:** `POST`
+*   **Access:** `Public`
+*   **Body:**
+    ```json
+    {
+      "name": "Nguyen Van Khach",
+      "phone": "0909123456",
+      "password": "password123",
+      "email": "customer@example.com",
+      "address": "123 Nguyen Trai, Q1, HCM"
+    }
+    ```
+    *(phone là bắt buộc và dùng làm username)*
+
+### Login (Đăng nhập khách hàng)
+*   **URL:** `/auth/customer/login`
+*   **Method:** `POST`
+*   **Access:** `Public`
+*   **Body:**
+    ```json
+    {
+      "phone": "0909123456",
+      "password": "password123"
+    }
+    ```
+
+### Logout
+*   **URL:** `/auth/customer/logout`
+*   **Method:** `POST`
+*   **Access:** `Customer`
+
+---
+
+## 3. Users Module (Quản lý nhân viên)
 Quản lý danh sách nhân viên trong hệ thống.
 
 ### Get All Users
@@ -91,7 +129,7 @@ Quản lý danh sách nhân viên trong hệ thống.
 
 ---
 
-## 3. Products Module (Hàng hóa)
+## 4. Products Module (Hàng hóa)
 Quản lý danh mục và sản phẩm.
 
 ### Categories (Danh mục)
@@ -162,7 +200,7 @@ Quản lý danh mục và sản phẩm.
 
 ---
 
-## 4. Inventory Module (Kho)
+## 5. Inventory Module (Kho)
 Quản lý nhập hàng và tồn kho.
 
 ### Import Goods (Nhập hàng)
@@ -257,7 +295,7 @@ Quản lý nhập hàng và tồn kho.
 
 ---
 
-## 5. Partners Module (Nhà cung cấp)
+## 6. Partners Module (Nhà cung cấp)
 Quản lý thông tin nhà cung cấp.
 
 ### Get All Suppliers
@@ -297,7 +335,7 @@ Quản lý thông tin nhà cung cấp.
 
 ---
 
-## 6. Customers Module (Khách hàng)
+## 7. Customers Module (Khách hàng)
 Quản lý thông tin khách hàng và lịch sử mua hàng.
 
 ### A. Dành cho Nhân viên (Staff)
