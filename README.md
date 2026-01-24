@@ -396,3 +396,61 @@ Quản lý thông tin khách hàng và lịch sử mua hàng.
 *   **URL:** `/customer/profile/history`
 *   **Method:** `GET`
 *   **Access:** `Customer`
+
+---
+
+## 8. Marketing Module (Vouchers)
+Quản lý mã giảm giá (Voucher).
+
+*Base URL: `/api/marketing`*
+
+### Create Voucher
+*   **URL:** `/vouchers`
+*   **Method:** `POST`
+*   **Access:** `ADMIN`, `MANAGER`
+*   **Body:**
+    ```json
+    {
+      "code": "SUMMER2026",
+      "type": "PERCENTAGE", // hoặc FIXED_AMOUNT
+      "value": 10, // 10% hoặc 10000 VND
+      "minOrderValue": 100000,
+      "maxDiscount": 50000,
+      "startDate": "2026-06-01",
+      "endDate": "2026-06-30",
+      "isActive": true
+    }
+    ```
+
+### Get All Vouchers
+*   **URL:** `/vouchers`
+*   **Method:** `GET`
+*   **Access:** `ADMIN`, `MANAGER`, `CASHIER`
+*   **Query Params:** `page`, `limit`, `search`, `isActive`
+
+### Get Voucher Detail
+*   **URL:** `/vouchers/:id`
+*   **Method:** `GET`
+*   **Access:** `ADMIN`, `MANAGER`
+
+### Update Voucher
+*   **URL:** `/vouchers/:id`
+*   **Method:** `PUT`
+*   **Access:** `ADMIN`, `MANAGER`
+
+### Delete Voucher
+*   **URL:** `/vouchers/:id`
+*   **Method:** `DELETE`
+*   **Access:** `ADMIN`, `MANAGER`
+
+### Verify Voucher (Kiểm tra mã)
+*   **URL:** `/vouchers/verify`
+*   **Method:** `POST`
+*   **Access:** `Authenticated Users`
+*   **Body:**
+    ```json
+    {
+      "code": "SUMMER2026",
+      "orderValue": 250000
+    }
+    ```
