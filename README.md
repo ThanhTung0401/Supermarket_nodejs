@@ -51,7 +51,45 @@ Quản lý đăng nhập, đăng ký và xác thực nhân viên.
 
 ---
 
-## 2. Users Module (Quản lý nhân viên)
+## 2. Auth Module (Khách hàng)
+Quản lý đăng ký và đăng nhập cho khách hàng (Customer).
+
+### Register (Đăng ký tài khoản khách hàng)
+*   **URL:** `/auth/customer/register`
+*   **Method:** `POST`
+*   **Access:** `Public`
+*   **Body:**
+    ```json
+    {
+      "name": "Nguyen Van Khach",
+      "phone": "0909123456",
+      "password": "password123",
+      "email": "customer@example.com",
+      "address": "123 Nguyen Trai, Q1, HCM"
+    }
+    ```
+    *(phone là bắt buộc và dùng làm username)*
+
+### Login (Đăng nhập khách hàng)
+*   **URL:** `/auth/customer/login`
+*   **Method:** `POST`
+*   **Access:** `Public`
+*   **Body:**
+    ```json
+    {
+      "phone": "0909123456",
+      "password": "password123"
+    }
+    ```
+
+### Logout
+*   **URL:** `/auth/customer/logout`
+*   **Method:** `POST`
+*   **Access:** `Customer`
+
+---
+
+## 3. Users Module (Quản lý nhân viên)
 Quản lý danh sách nhân viên trong hệ thống.
 
 ### Get All Users
@@ -91,7 +129,7 @@ Quản lý danh sách nhân viên trong hệ thống.
 
 ---
 
-## 3. Products Module (Hàng hóa)
+## 4. Products Module (Hàng hóa)
 Quản lý danh mục và sản phẩm.
 
 ### Categories (Danh mục)
@@ -162,7 +200,7 @@ Quản lý danh mục và sản phẩm.
 
 ---
 
-## 4. Inventory Module (Kho)
+## 5. Inventory Module (Kho)
 Quản lý nhập hàng và tồn kho.
 
 ### Import Goods (Nhập hàng)
@@ -257,7 +295,7 @@ Quản lý nhập hàng và tồn kho.
 
 ---
 
-## 5. Partners Module (Nhà cung cấp)
+## 6. Partners Module (Nhà cung cấp)
 Quản lý thông tin nhà cung cấp.
 
 ### Get All Suppliers
@@ -294,3 +332,125 @@ Quản lý thông tin nhà cung cấp.
 *   **URL:** `/partners/supplier/:id`
 *   **Method:** `DELETE`
 *   **Access:** `ADMIN`
+
+---
+
+## 7. Customers Module (Khách hàng)
+Quản lý thông tin khách hàng và lịch sử mua hàng.
+
+### A. Dành cho Nhân viên (Staff)
+*Base URL: `/api/customers`*
+
+#### Get All Customers (Tìm kiếm)
+*   **URL:** `/customers`
+*   **Method:** `GET`
+*   **Access:** `ADMIN`, `MANAGER`, `CASHIER`
+*   **Query Params:** `search` (Tên, SĐT, Email)
+
+#### Create Customer (Tạo nhanh tại quầy)
+*   **URL:** `/customers`
+*   **Method:** `POST`
+*   **Access:** `ADMIN`, `MANAGER`, `CASHIER`
+*   **Body:**
+    ```json
+    {
+      "name": "Khách lẻ",
+      "phone": "0909000111"
+    }
+    ```
+
+#### Get Customer Detail
+*   **URL:** `/customers/:id`
+*   **Method:** `GET`
+*   **Access:** `ADMIN`, `MANAGER`, `CASHIER`
+
+#### Get Customer Purchase History
+*   **URL:** `/customers/:id/invoices`
+*   **Method:** `GET`
+*   **Access:** `ADMIN`, `MANAGER`, `CASHIER`
+
+#### Update Customer
+*   **URL:** `/customers/:id`
+*   **Method:** `PATCH`
+*   **Access:** `ADMIN`, `MANAGER`, `CASHIER`
+
+#### Delete Customer
+*   **URL:** `/customers/:id`
+*   **Method:** `DELETE`
+*   **Access:** `ADMIN`
+
+### B. Dành cho Khách hàng (End-User)
+*Base URL: `/api/customer`*
+
+#### Get My Profile
+*   **URL:** `/customer/profile/me`
+*   **Method:** `GET`
+*   **Access:** `Customer`
+
+#### Update My Profile
+*   **URL:** `/customer/profile/me`
+*   **Method:** `PATCH`
+*   **Access:** `Customer`
+
+#### Get My Purchase History
+*   **URL:** `/customer/profile/history`
+*   **Method:** `GET`
+*   **Access:** `Customer`
+
+---
+
+## 8. Marketing Module (Vouchers)
+Quản lý mã giảm giá (Voucher).
+
+*Base URL: `/api/marketing`*
+
+### Create Voucher
+*   **URL:** `/vouchers`
+*   **Method:** `POST`
+*   **Access:** `ADMIN`, `MANAGER`
+*   **Body:**
+    ```json
+    {
+      "code": "SUMMER2026",
+      "type": "PERCENTAGE", // hoặc FIXED_AMOUNT
+      "value": 10, // 10% hoặc 10000 VND
+      "minOrderValue": 100000,
+      "maxDiscount": 50000,
+      "startDate": "2026-06-01",
+      "endDate": "2026-06-30",
+      "isActive": true
+    }
+    ```
+
+### Get All Vouchers
+*   **URL:** `/vouchers`
+*   **Method:** `GET`
+*   **Access:** `ADMIN`, `MANAGER`, `CASHIER`
+*   **Query Params:** `page`, `limit`, `search`, `isActive`
+
+### Get Voucher Detail
+*   **URL:** `/vouchers/:id`
+*   **Method:** `GET`
+*   **Access:** `ADMIN`, `MANAGER`
+
+### Update Voucher
+*   **URL:** `/vouchers/:id`
+*   **Method:** `PUT`
+*   **Access:** `ADMIN`, `MANAGER`
+
+### Delete Voucher
+*   **URL:** `/vouchers/:id`
+*   **Method:** `DELETE`
+*   **Access:** `ADMIN`, `MANAGER`
+
+### Verify Voucher (Kiểm tra mã)
+*   **URL:** `/vouchers/verify`
+*   **Method:** `POST`
+*   **Access:** `Authenticated Users`
+*   **Body:**
+    ```json
+    {
+      "code": "SUMMER2026",
+      "orderValue": 250000
+    }
+    ```
