@@ -1,6 +1,6 @@
 import {SalesService} from "./sales.service.js";
 
-export class SalesController {
+export class ShiftsController {
     constructor() {
         this.salesService = new SalesService();
     }

@@ -4,7 +4,7 @@ import ApiError from "../../utils/ApiError.js";
 export class SalesService{
 
     //WORKSHIFT
-    async starShift(userId, InitialCash){
+    async starShift(userId, initialCash){
         const openShift = await prisma.workShift.findFirst({
             where: {
                 staffId: userId,
@@ -31,11 +31,11 @@ export class SalesService{
                 endTime: null
             }
         });
-        if(openShift){
-            throw new ApiError(400,"Bạn vẫn còn một ca làm việc chưa kết thúc!")
+        if(!openShift){
+            throw new ApiError(400,"Bạn không có ca làm việc nào đang mở!")
         }
 
-        const invoice = await prisma.invoice.findMany({
+        const invoices = await prisma.invoice.findMany({
             where:{
                 workShiftId: openShift.id,
                 paymentMethod: "CASH",
@@ -44,7 +44,7 @@ export class SalesService{
             select: {totalAmount: true}
         });
 
-        const systemRevenue = invoice.reduce((sum, inv) => sum + Number(inv.totalAmount), 0);
+        const systemRevenue = invoices.reduce((sum, inv) => sum + Number(inv.totalAmount), 0);
         const initialCash = Number(openShift.initialCash);
         const actual = Number(actualCash);
 
@@ -65,9 +65,9 @@ export class SalesService{
     async getAllShift(userId){
         return prisma.workShift.findMany({
             where:{
-                staffId: userId,
-                endTime: null
-            }
+                staffId: userId
+            },
+            orderBy: { startTime: 'desc' }
         });
     }
 
@@ -82,7 +82,7 @@ export class SalesService{
 
     //POS
     async createPOSInvoice(userId, data){
-        const {items, customerid, voucherCode, paymentMethod} = data;
+        const {items, customerId, voucherCode, paymentMethod} = data;
 
         const shift = await prisma.workShift.findFirst({
             where:{
@@ -97,7 +97,9 @@ export class SalesService{
         return prisma.$transaction(async (tx) => {
             let totalAmount = 0;
             const invoiceItemsData =[];
+            const stockLogData = [];
 
+            // 1. Tính toán và chuẩn bị dữ liệu
             for (const item of items){
                 const product = await tx.product.findUnique({
                     where:{
@@ -105,13 +107,132 @@ export class SalesService{
                     }
                 })
                 if(!product){
-                    throw new ApiError(404, "Sản phẩm ID ${item.productId} không tồn tại!")
+                    throw new ApiError(404, `Sản phẩm ID ${item.productId} không tồn tại!`)
                 }
                 if(item.quantity > product.stockQuantity){
-                    throw new ApiError(400,"Sản phẩm có ID ${item.productId} không đủ số lượng để bán!")
+                    throw new ApiError(400,`Sản phẩm ${product.name} không đủ số lượng để bán!`)
                 }
+                const unitPrice = Number(product.retailPrice)
+                const totalPrice = unitPrice * item.quantity
+                totalAmount += totalPrice;
 
+                invoiceItemsData.push({
+                    productId: item.productId,
+                    quantity: item.quantity,
+                    unitPrice,
+                    totalPrice
+                });
+
+                // Trừ kho
+                await tx.product.update({
+                    where:{
+                        id: item.productId
+                    },
+                    data:{
+                        stockQuantity: product.stockQuantity - item.quantity
+                    }
+                });
+
+                // Chuẩn bị log kho (chưa có invoiceId)
+                stockLogData.push({
+                    productId: item.productId,
+                    staffId: userId,
+                    changeType: "SELL",
+                    changeQuantity: -item.quantity,
+                    currentStock: product.stockQuantity - item.quantity,
+                    note: 'Bán tại quầy'
+                });
             }
+
+            // 2. Xử lý Voucher
+            let discountAmount = 0;
+            let voucherId = null;
+
+            if (voucherCode) {
+                const voucher = await tx.voucher.findUnique({ where: { code: voucherCode } });
+                if (voucher && voucher.isActive) {
+                    // Check hạn sử dụng
+                    const now = new Date();
+                    if (now < voucher.startDate || now > voucher.endDate) {
+                        throw new ApiError(400, 'Voucher đã hết hạn hoặc chưa có hiệu lực!');
+                    }
+
+                    if (voucher.type === 'PERCENTAGE') {
+                        discountAmount = totalAmount * (Number(voucher.value) / 100);
+                        if (voucher.maxDiscount && discountAmount > Number(voucher.maxDiscount)) {
+                            discountAmount = Number(voucher.maxDiscount);
+                        }
+                    } else {
+                        discountAmount = Number(voucher.value);
+                    }
+                    voucherId = voucher.id;
+
+                    // Tăng lượt dùng voucher
+                    await tx.voucher.update({
+                        where: { id: voucher.id },
+                        data: { usedCount: { increment: 1 } }
+                    });
+                }
+            }
+
+            const finalAmount = totalAmount - discountAmount;
+            const code = `HD-${Date.now()}`;
+
+            // 3. Tạo Invoice
+            const invoice = await tx.invoice.create({
+                data: {
+                    code,
+                    staffId: userId,
+                    customerId: customerId ? parseInt(customerId) : null,
+                    workShiftId: shift.id,
+                    voucherId,
+                    totalAmount: finalAmount,
+                    discountAmount,
+                    paymentMethod,
+                    status: 'COMPLETED',
+                    source: 'POS',
+                    items: {
+                        create: invoiceItemsData
+                    }
+                }
+            });
+
+            // 4. Tạo Stock Logs (Gắn invoiceId)
+            for (const log of stockLogData) {
+                await tx.stockLog.create({
+                    data: {
+                        ...log,
+                        invoiceId: invoice.id
+                    }
+                });
+            }
+
+            // 5. Tích điểm khách hàng
+            if (customerId) {
+                const pointsEarned = Math.floor(finalAmount / 10000); // 10k = 1 điểm
+                await tx.customer.update({
+                    where: { id: parseInt(customerId) },
+                    data: { points: { increment: pointsEarned } }
+                });
+            }
+
+            return invoice;
+        })
+    }
+
+    async returnInvoice(userId, data){
+        const {invoiceId, reason, items} = data;
+
+        return prisma.$transaction(async (tx) => {
+            let refundTotal = 0;
+
+            const refundInv = await tx.returnInvoice.create({
+                data: {
+                    invoiceId: parseInt(invoiceId),
+                    refundAmount: refundTotal,
+                    reason
+                }
+            });
         })
     }
 }
