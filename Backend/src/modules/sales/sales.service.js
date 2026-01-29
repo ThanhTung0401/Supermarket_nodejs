@@ -220,19 +220,100 @@ export class SalesService{
         })
     }
 
+    //Return
     async returnInvoice(userId, data){
         const {invoiceId, reason, items} = data;
 
         return prisma.$transaction(async (tx) => {
             let refundTotal = 0;
 
+            // Tạo ReturnInvoice trước với refundAmount = 0
             const refundInv = await tx.returnInvoice.create({
                 data: {
                     invoiceId: parseInt(invoiceId),
-                    refundAmount: refundTotal,
+                    refundAmount: 0,
                     reason
                 }
             });
+
+            for(const item of items){
+                const originalItem = await tx.invoiceItem.findFirst({
+                    where: {
+                        invoiceId: parseInt(invoiceId),
+                        productId: item.productId
+                    }
+                });
+                
+                // Sửa lỗi string template: dùng backtick `
+                if(!originalItem){
+                    throw new ApiError(400, `Sản phẩm ID ${item.productId} không có trong hóa đơn gốc.`);
+                }
+
+                // Kiểm tra số lượng trả không được lớn hơn số lượng mua
+                if (item.quantity > originalItem.quantity) {
+                    throw new ApiError(400, `Số lượng trả của sản phẩm ID ${item.productId} vượt quá số lượng mua.`);
+                }
+
+                const refundPrice = Number(originalItem.unitPrice) * item.quantity;
+                refundTotal += refundPrice;
+
+                await tx.returnItem.create({
+                    data:{
+                        returnInvoiceId: refundInv.id,
+                        productId: item.productId,
+                        quantity: item.quantity,
+                        isRestocked: item.isRestocked
+                    }
+                })
+
+                let changeType = 'DAMAGE'; // Mặc định là hàng hỏng (không nhập lại kho bán)
+                let currentStock = 0;
+
+                const product = await tx.product.findUnique({ where: { id: item.productId } });
+                currentStock = product.stockQuantity;
+
+                if (item.isRestocked) {
+                    // Nếu hàng còn tốt -> Cộng lại vào kho bán
+                    changeType = 'RETURN';
+                    currentStock += item.quantity;
+
+                    await tx.product.update({
+                        where: { id: item.productId },
+                        data: { stockQuantity: { increment: item.quantity } }
+                    });
+                }
+
+                // Ghi Log
+                await tx.stockLog.create({
+                    data: {
+                        productId: item.productId,
+                        staffId: userId,
+                        changeType,
+                        changeQuantity: item.isRestocked ? item.quantity : 0, 
+                        currentStock,
+                        returnInvoiceId: refundInv.id,
+                        note: `Khách trả hàng: ${reason}`
+                    }
+                });
+            }
+            
+            // Update tổng tiền hoàn
+            await tx.returnInvoice.update({
+                where: { id: refundInv.id },
+                data: { refundAmount: refundTotal }
+            });
+
+            // Trừ điểm khách hàng (Rollback points)
+            const invoice = await tx.invoice.findUnique({ where: { id: parseInt(invoiceId) } });
+            if (invoice.customerId) {
+                const pointsRollback = Math.floor(refundTotal / 10000);
+                // Đảm bảo không trừ âm điểm (tùy chính sách)
+                await tx.customer.update({
+                    where: { id: invoice.customerId },
+                    data: { points: { decrement: pointsRollback } }
+                });
+            }
+            return refundInv;
         })
     }
 }

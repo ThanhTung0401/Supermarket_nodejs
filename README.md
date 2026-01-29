@@ -454,3 +454,91 @@ Quản lý mã giảm giá (Voucher).
       "orderValue": 250000
     }
     ```
+
+---
+
+## 9. Sales Module (Bán hàng & POS)
+Quản lý ca làm việc, bán hàng tại quầy và trả hàng.
+
+*Base URL: `/api/sales`*
+
+### A. Work Shift (Ca làm việc)
+
+#### Start Shift (Mở ca)
+*   **URL:** `/shift/start`
+*   **Method:** `POST`
+*   **Access:** `CASHIER`, `MANAGER`
+*   **Body:**
+    ```json
+    {
+      "initialCash": 1000000 // Tiền đầu ca
+    }
+    ```
+
+#### End Shift (Kết ca)
+*   **URL:** `/shift/end`
+*   **Method:** `POST`
+*   **Access:** `CASHIER`, `MANAGER`
+*   **Body:**
+    ```json
+    {
+      "actualCash": 5500000, // Tiền thực tế đếm được
+      "note": "Kết ca sớm"
+    }
+    ```
+
+#### Get Current Shift
+*   **URL:** `/shift/current`
+*   **Method:** `GET`
+*   **Access:** `CASHIER`, `MANAGER`
+
+#### Get Shift History
+*   **URL:** `/shift/history`
+*   **Method:** `GET`
+*   **Access:** `CASHIER`, `MANAGER`
+
+### B. POS (Bán hàng)
+
+#### Create Invoice (Thanh toán)
+*   **URL:** `/pos/invoice`
+*   **Method:** `POST`
+*   **Access:** `CASHIER`, `MANAGER`
+*   **Body:**
+    ```json
+    {
+      "customerId": 1, // Optional
+      "voucherCode": "SUMMER2026", // Optional
+      "paymentMethod": "CASH",
+      "items": [
+        {
+          "productId": 1,
+          "quantity": 2
+        },
+        {
+          "productId": 5,
+          "quantity": 1
+        }
+      ]
+    }
+    ```
+
+### C. Returns (Trả hàng)
+
+#### Return Invoice (Trả hàng hoàn tiền)
+*   **URL:** `/return`
+*   **Method:** `POST`
+*   **Access:** `CASHIER`, `MANAGER`
+*   **Body:**
+    ```json
+    {
+      "invoiceId": 123,
+      "reason": "Hàng bị lỗi sản xuất",
+      "items": [
+        {
+          "productId": 1,
+          "quantity": 1,
+          "isRestocked": false // false = Hàng hỏng, true = Nhập lại kho bán
+        }
+      ]
+    }
+    ```
