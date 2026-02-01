@@ -26,7 +26,7 @@ export const createVoucher = async (data) => {
         throw new ApiError(400, 'Ngày bắt đầu phải trước ngày kết thúc');
     }
 
-    return await prisma.voucher.create({
+    return prisma.voucher.create({
         data: {
             code: data.code,
             type: data.type,
