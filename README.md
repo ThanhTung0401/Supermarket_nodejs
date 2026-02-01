@@ -1,544 +1,444 @@
-# Supermarket API Documentation
+# Supermarket Management System API
 
-Documentation for the Supermarket Management System Backend API.
+Tài liệu API chi tiết cho hệ thống quản lý siêu thị (Backend Node.js + Express + Prisma + PostgreSQL).
 
-## Base URL
+## 🌐 Base URL
 `http://localhost:8080/api`
 
-## Authentication
-Tất cả các endpoints private đều yêu cầu Header:
-`Authorization: Bearer <your_token>`
-
-Roles: `ADMIN`, `MANAGER`, `WAREHOUSE`, `CASHIER`
+## 🔐 Authentication & Authorization
+*   **Header:** `Authorization: Bearer <your_jwt_token>`
+*   **Roles:** `ADMIN`, `MANAGER`, `WAREHOUSE`, `CASHIER`
+*   **Response Format Standard:**
+    ```json
+    {
+      "status": "success", // hoặc "fail", "error"
+      "data": { ... }      // Dữ liệu trả về
+    }
+    ```
 
 ---
 
-## 1. Auth Module (Nhân viên)
-Quản lý đăng nhập, đăng ký và xác thực nhân viên.
+## 1. 🧑‍💼 Auth Module (Nhân viên)
+Quản lý tài khoản nhân viên nội bộ.
 
-### Register (Tạo nhân viên mới)
+### 1.1 Đăng ký nhân viên mới
 *   **URL:** `/auth/user/register`
 *   **Method:** `POST`
 *   **Access:** `ADMIN`, `MANAGER`
-*   **Body:**
+*   **Request Body:**
     ```json
     {
-      "fullName": "Nguyen Van A",
-      "email": "staff@example.com",
+      "fullName": "Nguyen Van Quan Ly",
+      "email": "manager@supermarket.com",
       "password": "password123",
       "phone": "0901234567",
-      "role": "CASHIER" 
+      "role": "MANAGER" // CASHIER, WAREHOUSE, ADMIN
     }
     ```
-    *(Role options: CASHIER, WAREHOUSE, MANAGER)*
+*   **Response:**
+    ```json
+    {
+      "status": "success",
+      "data": {
+        "user": { "id": 1, "email": "manager@supermarket.com", "role": "MANAGER" }
+      }
+    }
+    ```
 
-### Login
+### 1.2 Đăng nhập
 *   **URL:** `/auth/user/login`
 *   **Method:** `POST`
 *   **Access:** `Public`
-*   **Body:**
+*   **Request Body:**
     ```json
     {
-      "email": "staff@example.com",
+      "email": "manager@supermarket.com",
       "password": "password123"
     }
     ```
-
-### Logout
-*   **URL:** `/auth/user/logout`
-*   **Method:** `POST`
-*   **Access:** `Private`
+*   **Response:**
+    ```json
+    {
+      "status": "success",
+      "token": "eyJhbGciOiJIUzI1NiIs...",
+      "data": {
+        "user": { "id": 1, "fullName": "Nguyen Van Quan Ly", "role": "MANAGER" }
+      }
+    }
+    ```
 
 ---
 
-## 2. Auth Module (Khách hàng)
-Quản lý đăng ký và đăng nhập cho khách hàng (Customer).
+## 2. 🛒 Auth Module (Khách hàng)
+Dành cho App/Web của khách hàng (End-User).
 
-### Register (Đăng ký tài khoản khách hàng)
+### 2.1 Đăng ký khách hàng
 *   **URL:** `/auth/customer/register`
 *   **Method:** `POST`
 *   **Access:** `Public`
-*   **Body:**
+*   **Request Body:**
     ```json
     {
-      "name": "Nguyen Van Khach",
-      "phone": "0909123456",
-      "password": "password123",
-      "email": "customer@example.com",
-      "address": "123 Nguyen Trai, Q1, HCM"
+      "name": "Tran Van Khach",
+      "phone": "0912345678", // Dùng làm username
+      "password": "customer123",
+      "email": "khach@gmail.com",
+      "address": "123 Le Loi, Q1"
     }
     ```
-    *(phone là bắt buộc và dùng làm username)*
 
-### Login (Đăng nhập khách hàng)
+### 2.2 Đăng nhập khách hàng
 *   **URL:** `/auth/customer/login`
 *   **Method:** `POST`
 *   **Access:** `Public`
-*   **Body:**
+*   **Request Body:**
     ```json
     {
-      "phone": "0909123456",
-      "password": "password123"
+      "phone": "0912345678",
+      "password": "customer123"
     }
     ```
 
-### Logout
-*   **URL:** `/auth/customer/logout`
-*   **Method:** `POST`
-*   **Access:** `Customer`
-
 ---
 
-## 3. Users Module (Quản lý nhân viên)
-Quản lý danh sách nhân viên trong hệ thống.
+## 3. 👥 Users Module (Quản lý nhân sự)
 
-### Get All Users
+### 3.1 Lấy danh sách nhân viên
 *   **URL:** `/users`
 *   **Method:** `GET`
 *   **Access:** `ADMIN`, `MANAGER`
-*   **Query Params:**
-    *   `role`: Lọc theo quyền (VD: CASHIER)
-    *   `search`: Tìm theo tên hoặc email
-
-### Get User Detail
-*   **URL:** `/users/:id`
-*   **Method:** `GET`
-*   **Access:** `ADMIN`, `MANAGER`
-
-### Update User Info
-*   **URL:** `/users/:id`
-*   **Method:** `PATCH`
-*   **Access:** `ADMIN`
-*   **Body:** (Các trường muốn sửa)
+*   **Query Params:** `?role=CASHIER&search=Nguyen`
+*   **Response:**
     ```json
     {
-      "fullName": "Nguyen Van B",
-      "phone": "0999999999"
+      "status": "success",
+      "data": {
+        "users": [
+          { "id": 2, "fullName": "Thu Ngan A", "role": "CASHIER", "isActive": true }
+        ]
+      }
     }
     ```
 
-### Toggle Active Status (Khóa/Mở khóa)
+### 3.2 Cập nhật thông tin nhân viên
+*   **URL:** `/users/:id`
+*   **Method:** `PATCH`
+*   **Access:** `ADMIN`
+*   **Request Body:**
+    ```json
+    {
+      "fullName": "Thu Ngan A (Da sua)",
+      "phone": "0999888777"
+    }
+    ```
+
+### 3.3 Khóa/Mở khóa tài khoản
 *   **URL:** `/users/:id/toggle-active`
 *   **Method:** `PATCH`
 *   **Access:** `ADMIN`
-
-### Delete User
-*   **URL:** `/users/:id`
-*   **Method:** `DELETE`
-*   **Access:** `ADMIN`
-
----
-
-## 4. Products Module (Hàng hóa)
-Quản lý danh mục và sản phẩm.
-
-### Categories (Danh mục)
-
-#### Get All Categories
-*   **URL:** `/products/categories`
-*   **Method:** `GET`
-*   **Access:** `Private`
-
-#### Create Category
-*   **URL:** `/products/categories`
-*   **Method:** `POST`
-*   **Access:** `ADMIN`, `MANAGER`
-*   **Body:**
+*   **Response:**
     ```json
     {
-      "name": "Nước ngọt"
+      "status": "success",
+      "message": "User deactivated",
+      "data": { "user": { "id": 2, "isActive": false } }
     }
     ```
 
-#### Get Category Detail
-*   **URL:** `/products/categories/:id`
-*   **Method:** `GET`
-*   **Access:** `Private`
+---
 
-### Products (Sản phẩm)
+## 4. 📦 Products Module (Hàng hóa)
 
-#### Get All Products
-*   **URL:** `/products`
-*   **Method:** `GET`
-*   **Access:** `Private`
-*   **Query Params:**
-    *   `categoryId`: ID danh mục
-    *   `search`: Tên hoặc Barcode
-    *   `lowStock`: `true` (Lọc hàng sắp hết)
+### 4.1 Tạo danh mục (Category)
+*   **URL:** `/products/categories`
+*   **Method:** `POST`
+*   **Access:** `ADMIN`, `MANAGER`
+*   **Request Body:**
+    ```json
+    { "name": "Đồ uống có gas" }
+    ```
 
-#### Create Product
+### 4.2 Tạo sản phẩm mới
 *   **URL:** `/products`
 *   **Method:** `POST`
 *   **Access:** `ADMIN`, `MANAGER`
-*   **Body:**
+*   **Request Body:**
     ```json
     {
       "name": "Coca Cola 330ml",
       "barcode": "893000123456",
       "categoryId": 1,
-      "retailPrice": 10000,
+      "retailPrice": 10000, // Giá bán lẻ
       "unit": "Lon",
-      "packingQuantity": 1,
-      "imageUrl": "http://image-url.com"
+      "packingQuantity": 24, // Quy cách (24 lon/thùng)
+      "minStockLevel": 10,
+      "imageUrl": "https://example.com/coca.jpg"
     }
     ```
 
-#### Get Product by Barcode
+### 4.3 Lấy danh sách sản phẩm
+*   **URL:** `/products`
+*   **Method:** `GET`
+*   **Access:** `Private`
+*   **Query Params:** `?categoryId=1&search=Coca&lowStock=true`
+
+### 4.4 Tìm sản phẩm theo Barcode (Scan)
 *   **URL:** `/products/barcode/:barcode`
 *   **Method:** `GET`
 *   **Access:** `Private`
-
-#### Update Product
-*   **URL:** `/products/:id`
-*   **Method:** `PATCH`
-*   **Access:** `ADMIN`, `MANAGER`
-
-#### Delete Product
-*   **URL:** `/products/:id`
-*   **Method:** `DELETE`
-*   **Access:** `ADMIN`, `MANAGER`
+*   **Response:**
+    ```json
+    {
+      "status": "success",
+      "data": {
+        "product": {
+          "id": 1,
+          "name": "Coca Cola 330ml",
+          "retailPrice": "10000",
+          "stockQuantity": 100
+        }
+      }
+    }
+    ```
 
 ---
 
-## 5. Inventory Module (Kho)
-Quản lý nhập hàng và tồn kho.
+## 5. 🏭 Inventory Module (Kho hàng)
 
-### Import Goods (Nhập hàng)
+### 5.1 Nhập hàng (Import) - Quan trọng
+Hỗ trợ nhập hàng cho sản phẩm cũ và tạo mới sản phẩm ngay trong phiếu nhập.
+
 *   **URL:** `/inventory/import`
 *   **Method:** `POST`
 *   **Access:** `ADMIN`, `MANAGER`, `WAREHOUSE`
-*   **Body:**
-    *   **Trường hợp 1: Nhập hàng cho sản phẩm đã có**
-        ```json
+*   **Request Body:**
+    ```json
+    {
+      "supplierId": 1,
+      "note": "Nhập hàng tháng 6",
+      "items": [
         {
-          "supplierId": 1,
-          "note": "Nhập hàng đầu tháng",
-          "items": [
-            {
-              "productId": 1,
-              "quantity": 100,
-              "unitCost": 8000
-            }
-          ]
-        }
-        ```
-    *   **Trường hợp 2: Nhập hàng cho sản phẩm MỚI HOÀN TOÀN**
-        ```json
+          "productId": 1, // Sản phẩm đã có
+          "quantity": 100,
+          "unitCost": 8000 // Giá nhập
+        },
         {
-          "supplierId": 1,
-          "note": "Nhập sản phẩm mới",
-          "items": [
-            {
-              "isNewProduct": true,
-              "quantity": 50,
-              "unitCost": 15000,
-              "productData": {
-                "name": "Bánh Quy Bơ Mới",
-                "barcode": "893123456789",
-                "categoryId": 2,
-                "retailPrice": 25000,
-                "unit": "hộp",
-                "minStockLevel": 20,
-                "description": "Bánh quy bơ nhập khẩu",
-                "imageUrl": "http://..."
-              }
-            }
-          ]
+          "isNewProduct": true, // Sản phẩm mới hoàn toàn
+          "quantity": 50,
+          "unitCost": 15000,
+          "productData": {
+            "name": "Bánh Quy Bơ Mới",
+            "barcode": "893999999999",
+            "categoryId": 2,
+            "retailPrice": 25000,
+            "unit": "Hộp",
+            "minStockLevel": 20
+          }
         }
-        ```
+      ]
+    }
+    ```
 
-### Get Import History
-*   **URL:** `/inventory/import`
-*   **Method:** `GET`
-*   **Access:** `ADMIN`, `MANAGER`, `WAREHOUSE`
-*   **Query Params:** `page`, `limit`, `fromDate`, `toDate`
-
-### Get Import Detail
-*   **URL:** `/inventory/import/:id`
-*   **Method:** `GET`
-*   **Access:** `ADMIN`, `MANAGER`, `WAREHOUSE`
-
-### Stock Status (Xem tồn kho)
+### 5.2 Xem trạng thái kho
 *   **URL:** `/inventory/status`
 *   **Method:** `GET`
-*   **Access:** `All Roles`
-*   **Query Params:** `lowStock=true` (chỉ xem hàng sắp hết)
+*   **Query Params:** `?lowStock=true` (Lọc hàng sắp hết)
 
-### Adjust Stock (Kiểm kê / Hủy hàng)
+### 5.3 Điều chỉnh kho (Kiểm kê/Hủy)
 *   **URL:** `/inventory/adjust`
 *   **Method:** `POST`
-*   **Access:** `ADMIN`, `MANAGER`, `WAREHOUSE`
-*   **Body (Hư hỏng):**
+*   **Request Body (Hủy hàng hỏng):**
     ```json
     {
       "productId": 1,
       "changeType": "DAMAGE",
-      "quantity": 2,
-      "note": "Hàng vỡ khi vận chuyển" 
+      "quantity": 5, // Số lượng hỏng
+      "note": "Vỡ khi vận chuyển"
     }
     ```
-*   **Body (Kiểm kê):**
+*   **Request Body (Kiểm kê):**
     ```json
     {
       "productId": 1,
       "changeType": "AUDIT",
-      "quantity": 98, 
-      "note": "Cân bằng lại kho sau kiểm kê"
+      "quantity": 95, // Số lượng THỰC TẾ đếm được
+      "note": "Cân bằng kho"
     }
     ```
-    *(Lưu ý: Với AUDIT, quantity là số lượng thực tế trong kho)*
-
-### Stock Logs (Lịch sử kho)
-*   **URL:** `/inventory/logs`
-*   **Method:** `GET`
-*   **Access:** `ADMIN`, `MANAGER`, `WAREHOUSE`
 
 ---
 
-## 6. Partners Module (Nhà cung cấp)
-Quản lý thông tin nhà cung cấp.
+## 6. 🤝 Partners Module (Nhà cung cấp)
 
-### Get All Suppliers
-*   **URL:** `/partners/suppliers`
-*   **Method:** `GET`
-*   **Access:** `ADMIN`, `MANAGER`, `WAREHOUSE`
-*   **Query Params:** `search`
-
-### Create Supplier
+### 6.1 Tạo nhà cung cấp
 *   **URL:** `/partners/supplier`
 *   **Method:** `POST`
-*   **Access:** `ADMIN`, `MANAGER`
-*   **Body:**
+*   **Request Body:**
     ```json
     {
-      "name": "Coca Cola Viet Nam",
-      "phone": "0281234567",
-      "email": "contact@coca.vn",
-      "address": "TP.HCM"
+      "name": "Công ty PepsiCo",
+      "phone": "02833334444",
+      "email": "contact@pepsi.vn",
+      "address": "KCN Song Than"
     }
     ```
 
-### Get Supplier Detail
-*   **URL:** `/partners/supplier/:id`
-*   **Method:** `GET`
-*   **Access:** `ADMIN`, `MANAGER`, `WAREHOUSE`
-
-### Update Supplier
-*   **URL:** `/partners/supplier/:id`
-*   **Method:** `PATCH`
-*   **Access:** `ADMIN`, `MANAGER`
-
-### Delete Supplier
-*   **URL:** `/partners/supplier/:id`
-*   **Method:** `DELETE`
-*   **Access:** `ADMIN`
-
 ---
 
-## 7. Customers Module (Khách hàng)
-Quản lý thông tin khách hàng và lịch sử mua hàng.
+## 7. 💖 Customers Module (CRM)
 
-### A. Dành cho Nhân viên (Staff)
-*Base URL: `/api/customers`*
+### A. Dành cho Nhân viên (POS/CSKH)
 
-#### Get All Customers (Tìm kiếm)
+#### 7.1 Tìm kiếm khách hàng (Tích điểm)
 *   **URL:** `/customers`
 *   **Method:** `GET`
-*   **Access:** `ADMIN`, `MANAGER`, `CASHIER`
-*   **Query Params:** `search` (Tên, SĐT, Email)
+*   **Query Params:** `?search=0912345678` (Tìm theo SĐT)
 
-#### Create Customer (Tạo nhanh tại quầy)
+#### 7.2 Tạo khách hàng nhanh tại quầy
 *   **URL:** `/customers`
 *   **Method:** `POST`
-*   **Access:** `ADMIN`, `MANAGER`, `CASHIER`
-*   **Body:**
+*   **Request Body:**
     ```json
     {
-      "name": "Khách lẻ",
+      "name": "Khách Vãng Lai",
       "phone": "0909000111"
     }
     ```
 
-#### Get Customer Detail
-*   **URL:** `/customers/:id`
-*   **Method:** `GET`
-*   **Access:** `ADMIN`, `MANAGER`, `CASHIER`
-
-#### Get Customer Purchase History
+#### 7.3 Xem lịch sử mua hàng của khách
 *   **URL:** `/customers/:id/invoices`
 *   **Method:** `GET`
-*   **Access:** `ADMIN`, `MANAGER`, `CASHIER`
 
-#### Update Customer
-*   **URL:** `/customers/:id`
-*   **Method:** `PATCH`
-*   **Access:** `ADMIN`, `MANAGER`, `CASHIER`
+### B. Dành cho Khách hàng (App)
 
-#### Delete Customer
-*   **URL:** `/customers/:id`
-*   **Method:** `DELETE`
-*   **Access:** `ADMIN`
-
-### B. Dành cho Khách hàng (End-User)
-*Base URL: `/api/customer`*
-
-#### Get My Profile
+#### 7.4 Xem Profile cá nhân
 *   **URL:** `/customer/profile/me`
 *   **Method:** `GET`
-*   **Access:** `Customer`
-
-#### Update My Profile
-*   **URL:** `/customer/profile/me`
-*   **Method:** `PATCH`
-*   **Access:** `Customer`
-
-#### Get My Purchase History
-*   **URL:** `/customer/profile/history`
-*   **Method:** `GET`
-*   **Access:** `Customer`
+*   **Access:** `Customer Token`
 
 ---
 
-## 8. Marketing Module (Vouchers)
-Quản lý mã giảm giá (Voucher).
+## 8. 🎁 Marketing Module (Vouchers)
 
-*Base URL: `/api/marketing`*
-
-### Create Voucher
+### 8.1 Tạo mã giảm giá
 *   **URL:** `/vouchers`
 *   **Method:** `POST`
-*   **Access:** `ADMIN`, `MANAGER`
-*   **Body:**
+*   **Request Body:**
     ```json
     {
-      "code": "SUMMER2026",
+      "code": "SALE50",
       "type": "PERCENTAGE", // hoặc FIXED_AMOUNT
-      "value": 10, // 10% hoặc 10000 VND
-      "minOrderValue": 100000,
-      "maxDiscount": 50000,
-      "startDate": "2026-06-01",
-      "endDate": "2026-06-30",
-      "isActive": true
+      "value": 50, // Giảm 50%
+      "maxDiscount": 100000, // Tối đa 100k
+      "minOrderValue": 200000, // Đơn tối thiểu 200k
+      "startDate": "2026-01-01",
+      "endDate": "2026-02-01"
     }
     ```
 
-### Get All Vouchers
-*   **URL:** `/vouchers`
-*   **Method:** `GET`
-*   **Access:** `ADMIN`, `MANAGER`, `CASHIER`
-*   **Query Params:** `page`, `limit`, `search`, `isActive`
-
-### Get Voucher Detail
-*   **URL:** `/vouchers/:id`
-*   **Method:** `GET`
-*   **Access:** `ADMIN`, `MANAGER`
-
-### Update Voucher
-*   **URL:** `/vouchers/:id`
-*   **Method:** `PUT`
-*   **Access:** `ADMIN`, `MANAGER`
-
-### Delete Voucher
-*   **URL:** `/vouchers/:id`
-*   **Method:** `DELETE`
-*   **Access:** `ADMIN`, `MANAGER`
-
-### Verify Voucher (Kiểm tra mã)
+### 8.2 Kiểm tra mã (Verify)
 *   **URL:** `/vouchers/verify`
 *   **Method:** `POST`
-*   **Access:** `Authenticated Users`
-*   **Body:**
+*   **Request Body:**
     ```json
     {
-      "code": "SUMMER2026",
+      "code": "SALE50",
       "orderValue": 250000
     }
     ```
+*   **Response:**
+    ```json
+    {
+      "status": "success",
+      "data": {
+        "isValid": true,
+        "discountAmount": 100000
+      }
+    }
+    ```
 
 ---
 
-## 9. Sales Module (Bán hàng & POS)
-Quản lý ca làm việc, bán hàng tại quầy và trả hàng.
+## 9. 🏪 Sales Module (POS & Ca làm việc)
 
-*Base URL: `/api/sales`*
-
-### A. Work Shift (Ca làm việc)
-
-#### Start Shift (Mở ca)
-*   **URL:** `/shift/start`
+### 9.1 Bắt đầu ca làm việc
+*   **URL:** `/sales/shift/start`
 *   **Method:** `POST`
-*   **Access:** `CASHIER`, `MANAGER`
-*   **Body:**
+*   **Access:** `CASHIER`
+*   **Request Body:**
     ```json
-    {
-      "initialCash": 1000000 // Tiền đầu ca
-    }
+    { "initialCash": 1000000 } // Tiền lẻ đầu ca
     ```
 
-#### End Shift (Kết ca)
-*   **URL:** `/shift/end`
+### 9.2 Thanh toán hóa đơn (POS)
+*   **URL:** `/sales/pos/invoice`
 *   **Method:** `POST`
-*   **Access:** `CASHIER`, `MANAGER`
-*   **Body:**
+*   **Request Body:**
     ```json
     {
-      "actualCash": 5500000, // Tiền thực tế đếm được
-      "note": "Kết ca sớm"
-    }
-    ```
-
-#### Get Current Shift
-*   **URL:** `/shift/current`
-*   **Method:** `GET`
-*   **Access:** `CASHIER`, `MANAGER`
-
-#### Get Shift History
-*   **URL:** `/shift/history`
-*   **Method:** `GET`
-*   **Access:** `CASHIER`, `MANAGER`
-
-### B. POS (Bán hàng)
-
-#### Create Invoice (Thanh toán)
-*   **URL:** `/pos/invoice`
-*   **Method:** `POST`
-*   **Access:** `CASHIER`, `MANAGER`
-*   **Body:**
-    ```json
-    {
-      "customerId": 1, // Optional
-      "voucherCode": "SUMMER2026", // Optional
-      "paymentMethod": "CASH",
+      "customerId": 5, // Optional (để tích điểm)
+      "voucherCode": "SALE50", // Optional
+      "paymentMethod": "CASH", // CASH, BANK_TRANSFER, CREDIT_CARD
       "items": [
-        {
-          "productId": 1,
-          "quantity": 2
-        },
-        {
-          "productId": 5,
-          "quantity": 1
-        }
+        { "productId": 1, "quantity": 2 },
+        { "productId": 3, "quantity": 1 }
       ]
     }
     ```
+*   **Response:** Trả về chi tiết hóa đơn, tổng tiền, điểm tích lũy.
 
-### C. Returns (Trả hàng)
-
-#### Return Invoice (Trả hàng hoàn tiền)
-*   **URL:** `/return`
+### 9.3 Trả hàng (Return)
+*   **URL:** `/sales/return`
 *   **Method:** `POST`
-*   **Access:** `CASHIER`, `MANAGER`
-*   **Body:**
+*   **Request Body:**
     ```json
     {
-      "invoiceId": 123,
-      "reason": "Hàng bị lỗi sản xuất",
+      "invoiceId": 102,
+      "reason": "Sản phẩm bị lỗi",
       "items": [
         {
           "productId": 1,
           "quantity": 1,
-          "isRestocked": false // false = Hàng hỏng, true = Nhập lại kho bán
+          "isRestocked": false // false = Hủy luôn, true = Nhập lại kho bán
         }
       ]
     }
     ```
+
+### 9.4 Kết ca
+*   **URL:** `/sales/shift/end`
+*   **Method:** `POST`
+*   **Request Body:**
+    ```json
+    {
+      "actualCash": 5500000, // Tiền đếm được trong két
+      "note": "Kết ca, lệch 10k do thối nhầm"
+    }
+    ```
+
+---
+
+## 10. 🚚 Orders Module (Đơn hàng Online)
+
+### 10.1 Lấy danh sách đơn hàng
+*   **URL:** `/orders`
+*   **Method:** `GET`
+*   **Access:** `ADMIN`, `MANAGER`, `WAREHOUSE`
+*   **Query Params:**
+    *   `status`: `PENDING` (Chờ duyệt), `CONFIRMED` (Đã duyệt/Đang lấy hàng), `SHIPPING` (Đang giao), `COMPLETED`, `CANCELLED`.
+    *   `page`: 1
+    *   `limit`: 20
+
+### 10.2 Cập nhật trạng thái đơn
+*   **URL:** `/orders/:id/status`
+*   **Method:** `PATCH`
+*   **Request Body:**
+    ```json
+    {
+      "status": "CONFIRMED"
+    }
+    ```
+*   **Logic xử lý:**
+    *   `PENDING` -> `CONFIRMED`: Hệ thống sẽ **trừ tồn kho** sản phẩm.
+    *   `SHIPPING` -> `COMPLETED`: Hệ thống sẽ **cộng điểm** cho khách hàng.
+    *   `CONFIRMED/SHIPPING` -> `CANCELLED`: Hệ thống sẽ **hoàn lại tồn kho** (cộng lại).
