@@ -442,3 +442,52 @@ Hỗ trợ nhập hàng cho sản phẩm cũ và tạo mới sản phẩm ngay t
     *   `PENDING` -> `CONFIRMED`: Hệ thống sẽ **trừ tồn kho** sản phẩm.
     *   `SHIPPING` -> `COMPLETED`: Hệ thống sẽ **cộng điểm** cho khách hàng.
     *   `CONFIRMED/SHIPPING` -> `CANCELLED`: Hệ thống sẽ **hoàn lại tồn kho** (cộng lại).
+
+---
+
+## 11. 📊 Reports Module (Báo cáo)
+
+### 11.1 Thống kê Dashboard
+*   **URL:** `/reports/dashboard`
+*   **Method:** `GET`
+*   **Access:** `ADMIN`, `MANAGER`
+*   **Response:**
+    ```json
+    {
+      "status": "success",
+      "data": {
+        "todayRevenue": 5000000,
+        "monthRevenue": 150000000,
+        "totalOrders": 120,
+        "totalCustomers": 50,
+        "lowStockCount": 5
+      }
+    }
+    ```
+
+### 11.2 Biểu đồ doanh thu 7 ngày
+*   **URL:** `/reports/revenue-chart`
+*   **Method:** `GET`
+*   **Response:**
+    ```json
+    {
+      "status": "success",
+      "data": [
+        { "date": "2023-10-01", "revenue": 2000000 },
+        { "date": "2023-10-02", "revenue": 3500000 }
+      ]
+    }
+    ```
+
+### 11.3 Top sản phẩm bán chạy
+*   **URL:** `/reports/top-selling`
+*   **Method:** `GET`
+*   **Response:**
+    ```json
+    {
+      "status": "success",
+      "data": [
+        { "id": 1, "name": "Coca Cola", "sold": 150, "stock": 50 }
+      ]
+    }
+    ```
