@@ -491,3 +491,53 @@ Hỗ trợ nhập hàng cho sản phẩm cũ và tạo mới sản phẩm ngay t
       ]
     }
     ```
+
+---
+
+## 12. 🛍️ Storefront Module (API cho App Khách hàng)
+Các API này dành riêng cho ứng dụng mua sắm của khách hàng (End-User).
+
+### 12.1 Lấy danh sách sản phẩm (Public)
+*   **URL:** `/store/products`
+*   **Method:** `GET`
+*   **Access:** `Public`
+*   **Query Params:** `?categoryId=1&search=Banh&page=1`
+*   **Response:**
+    ```json
+    {
+      "status": "success",
+      "data": {
+        "products": [
+          { "id": 1, "name": "Bánh Quy", "retailPrice": "25000", "imageUrl": "..." }
+        ],
+        "pagination": { "page": 1, "totalPages": 5 }
+      }
+    }
+    ```
+
+### 12.2 Xem chi tiết sản phẩm
+*   **URL:** `/store/products/:id`
+*   **Method:** `GET`
+*   **Access:** `Public`
+
+### 12.3 Đặt hàng Online (Checkout)
+*   **URL:** `/store/orders`
+*   **Method:** `POST`
+*   **Access:** `Customer Token`
+*   **Request Body:**
+    ```json
+    {
+      "items": [
+        { "productId": 1, "quantity": 2 },
+        { "productId": 5, "quantity": 1 }
+      ],
+      "voucherCode": "SALE50", // Optional
+      "paymentMethod": "COD", // COD, BANK_TRANSFER
+      "deliveryAddress": "123 Đường ABC, Quận 1" // Optional (nếu khác địa chỉ mặc định)
+    }
+    ```
+
+### 12.4 Xem lịch sử đơn hàng của tôi
+*   **URL:** `/store/orders/my-orders`
+*   **Method:** `GET`
+*   **Access:** `Customer Token`

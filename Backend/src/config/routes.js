@@ -11,6 +11,7 @@ import marketingRoutes from '../modules/marketing/marketing.routes.js';
 import salesRoutes from "../modules/sales/sales.routes.js";
 import ordersRoutes from "../modules/orders/orders.routes.js";
 import reportsRoutes from "../modules/reports/reports.routes.js";
+import storeRoutes from "../modules/storefront/store.routes.js";
 
 /**
  * Setup tất cả các routes của ứng dụng
@@ -30,6 +31,8 @@ export const setupRoutes = (app) => {
     app.use('/api/sales', salesRoutes);
     app.use('/api/orders', ordersRoutes);
     app.use('/api/reports', reportsRoutes);
+    app.use('/api/store', storeRoutes);
+
 
 
 
