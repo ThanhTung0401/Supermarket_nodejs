@@ -24,8 +24,18 @@ const VoucherList = () => {
         setLoading(true);
         try {
             const res = await voucherApi.getAll();
+            console.log("Voucher API Response:", res); // Debug
+
             if (res?.status === 'success') {
-                setVouchers(res.data.vouchers || []);
+                // Backend trả về { status: 'success', data: [Array Vouchers], meta: ... }
+                if (Array.isArray(res.data)) {
+                    setVouchers(res.data);
+                } else if (res.data && Array.isArray(res.data.vouchers)) {
+                    // Fallback
+                    setVouchers(res.data.vouchers);
+                } else {
+                    setVouchers([]);
+                }
             }
         } catch (error) {
             console.error("Lỗi tải voucher:", error);
