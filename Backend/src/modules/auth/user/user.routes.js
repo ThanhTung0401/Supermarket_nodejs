@@ -5,9 +5,15 @@ import { restrictTo } from '../../../middlewares/role.middleware.js';
 
 const router = express.Router();
 
+// Public Routes
+router.post('/login', userAuthController.login);
+
+// Protected Routes
+router.use(protect); // Các route bên dưới cần đăng nhập
+
+router.post('/logout', userAuthController.logout);
+
 // Chỉ Admin hoặc Manager mới được tạo nhân viên mới
-router.post('/register', userAuthController.register); // Tạo nhân viên mới (cần quyền)
-router.post('/login', userAuthController.login);       // Đăng nhập nội bộ
-router.post('/logout', userAuthController.logout);     // Đăng xuất
+router.post('/register', restrictTo('ADMIN', 'MANAGER'), userAuthController.register);
 
 export default router;

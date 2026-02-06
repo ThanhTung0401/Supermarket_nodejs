@@ -138,7 +138,7 @@ export class SuppliersService {
 
     async deleteSupplier(id) {
         // Kiểm tra supplier tồn tại
-        const supplier = await this.getSupplierById(id);
+        await this.getSupplierById(id);
 
         // Kiểm tra xem supplier có phiếu nhập nào không
         const importReceiptsCount = await prisma.importReceipt.count({
@@ -146,7 +146,7 @@ export class SuppliersService {
         });
 
         if (importReceiptsCount > 0) {
-            throw new ApiError(400, `Cannot delete supplier. It has ${importReceiptsCount} import receipt(s)`);
+            throw new ApiError(400, `Không thể xóa nhà cung cấp này vì đã có ${importReceiptsCount} phiếu nhập hàng.`);
         }
 
         await prisma.supplier.delete({

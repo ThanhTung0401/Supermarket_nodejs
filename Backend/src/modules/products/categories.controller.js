@@ -37,4 +37,22 @@ export class CategoriesController {
         }
     }
 
+    update = async (req, res, next) => {
+        try {
+            const { name } = req.body;
+            const category = await this.productsService.updateCategory(req.params.id, name);
+            res.status(200).json({ status: 'success', data: category });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    delete = async (req, res, next) => {
+        try {
+            await this.productsService.deleteCategory(req.params.id);
+            res.status(204).json({ status: 'success', data: null });
+        } catch (error) {
+            next(error);
+        }
+    }
 }

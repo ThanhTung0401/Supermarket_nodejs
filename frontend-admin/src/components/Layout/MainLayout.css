@@ -111,6 +111,16 @@
     color: #374151;
 }
 
+.role-tag {
+    font-size: 0.75rem;
+    background-color: #e0e7ff;
+    color: #4338ca;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 6px;
+    font-weight: 600;
+}
+
 .logout-btn {
     padding: 6px 12px;
     background-color: #fee2e2;
@@ -118,6 +128,7 @@
     border: 1px solid #fecaca;
     border-radius: 6px;
     font-size: 0.85rem;
+    cursor: pointer;
 }
 
 .logout-btn:hover {

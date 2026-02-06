@@ -22,6 +22,14 @@ const productApi = {
         const url = `/products/${id}`;
         return axiosClient.delete(url);
     },
+    restore(id) {
+        const url = `/products/${id}/restore`;
+        return axiosClient.patch(url);
+    },
+    hardRemove(id) { // Xóa vĩnh viễn
+        const url = `/products/${id}/hard-delete`;
+        return axiosClient.delete(url);
+    },
     
     // --- Categories ---
     getCategories() {

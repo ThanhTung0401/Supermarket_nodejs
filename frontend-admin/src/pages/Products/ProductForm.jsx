@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import productApi from '../../api/productApi';
+import axiosClient from '../../api/axiosClient'; // Import axiosClient để gọi API upload
 import './ProductForm.css';
 
 const ProductForm = ({ product, onClose, onSave }) => {
@@ -17,23 +18,31 @@ const ProductForm = ({ product, onClose, onSave }) => {
     });
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [uploading, setUploading] = useState(false); // State upload
     const [error, setError] = useState('');
 
-    // Load danh mục và dữ liệu sản phẩm (nếu là sửa)
     useEffect(() => {
         const fetchCategories = async () => {
             try {
                 const res = await productApi.getCategories();
-                if (res.status === 'success') {
-                    setCategories(res.data.categories || []);
+                if (res && res.status === 'success') {
+                    if (res.data && Array.isArray(res.data.categories)) {
+                        setCategories(res.data.categories);
+                    } else if (Array.isArray(res.data)) {
+                        setCategories(res.data);
+                    } else {
+                        setCategories([]);
+                    }
                 }
             } catch (err) {
-                console.error("Lỗi tải danh mục:", err);
+                console.error("Lỗi tải danh mục trong form:", err);
             }
         };
 
         fetchCategories();
+    }, []);
 
+    useEffect(() => {
         if (product) {
             setFormData({
                 name: product.name || '',
@@ -58,18 +67,55 @@ const ProductForm = ({ product, onClose, onSave }) => {
         }));
     };
 
+    // Xử lý upload ảnh
+    const handleFileChange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const formDataUpload = new FormData();
+        formDataUpload.append('image', file);
+
+        setUploading(true);
+        try {
+            // Gọi API upload (cần cấu hình axiosClient để hỗ trợ multipart/form-data nếu cần, 
+            // nhưng axios tự động xử lý nếu data là FormData)
+            // Tuy nhiên axiosClient của ta đang set Content-Type: application/json mặc định
+            // Nên ta cần override header
+            const res = await axiosClient.post('/upload', formDataUpload, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+            
+            if (res.status === 'success') {
+                setFormData(prev => ({ ...prev, imageUrl: res.data.imageUrl }));
+            }
+        } catch (err) {
+            console.error("Upload failed:", err);
+            alert("Upload ảnh thất bại!");
+        } finally {
+            setUploading(false);
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError('');
 
         try {
-            // Validate cơ bản
-            if (!formData.name || !formData.barcode || !formData.retailPrice) {
+            if (!formData.name || !formData.barcode || !formData.retailPrice || !formData.categoryId) {
                 throw new Error("Vui lòng điền đầy đủ các trường bắt buộc (*)");
             }
 
-            // Chuyển đổi kiểu dữ liệu số
+            if (Number(formData.retailPrice) < 0 || Number(formData.importPrice) < 0) {
+                throw new Error("Giá không được âm");
+            }
+            
+            if (Number(formData.packingQuantity) < 1) {
+                throw new Error("Quy cách đóng gói phải lớn hơn hoặc bằng 1");
+            }
+
             const payload = {
                 ...formData,
                 categoryId: Number(formData.categoryId),
@@ -81,15 +127,13 @@ const ProductForm = ({ product, onClose, onSave }) => {
 
             let response;
             if (product?.id) {
-                // Update
                 response = await productApi.update(product.id, payload);
             } else {
-                // Create
                 response = await productApi.add(payload);
             }
 
             if (response.status === 'success') {
-                onSave(); // Callback để refresh list bên ngoài
+                onSave();
                 onClose();
             }
         } catch (err) {
@@ -131,10 +175,11 @@ const ProductForm = ({ product, onClose, onSave }) => {
 
                         <div className="form-row">
                             <div className="form-group">
-                                <label>Danh mục</label>
+                                <label>Danh mục <span className="required">*</span></label>
                                 <select 
                                     name="categoryId" 
                                     value={formData.categoryId} onChange={handleChange}
+                                    required
                                 >
                                     <option value="">-- Chọn danh mục --</option>
                                     {categories.map(cat => (
@@ -186,11 +231,30 @@ const ProductForm = ({ product, onClose, onSave }) => {
                         </div>
 
                         <div className="form-group">
-                            <label>Link hình ảnh</label>
-                            <input 
-                                type="text" name="imageUrl" 
-                                value={formData.imageUrl} onChange={handleChange} placeholder="https://..."
-                            />
+                            <label>Hình ảnh</label>
+                            <div style={{display: 'flex', gap: '10px', alignItems: 'center'}}>
+                                <input 
+                                    type="text" name="imageUrl" 
+                                    value={formData.imageUrl} onChange={handleChange} placeholder="Link ảnh hoặc upload..."
+                                    style={{flex: 1}}
+                                />
+                                <label className="btn-upload" style={{
+                                    padding: '8px 12px', 
+                                    background: '#e5e7eb', 
+                                    borderRadius: '6px', 
+                                    cursor: 'pointer',
+                                    fontSize: '0.9rem',
+                                    whiteSpace: 'nowrap'
+                                }}>
+                                    {uploading ? 'Đang tải...' : 'Chọn ảnh'}
+                                    <input type="file" accept="image/*" hidden onChange={handleFileChange} />
+                                </label>
+                            </div>
+                            {formData.imageUrl && (
+                                <div style={{marginTop: '10px'}}>
+                                    <img src={formData.imageUrl} alt="Preview" style={{height: '80px', borderRadius: '4px', border: '1px solid #ddd'}} />
+                                </div>
+                            )}
                         </div>
 
                         <div className="form-group">
@@ -204,7 +268,7 @@ const ProductForm = ({ product, onClose, onSave }) => {
 
                     <div className="modal-footer">
                         <button type="button" className="btn-cancel" onClick={onClose}>Hủy</button>
-                        <button type="submit" className="btn-save" disabled={loading}>
+                        <button type="submit" className="btn-save" disabled={loading || uploading}>
                             {loading ? 'Đang lưu...' : 'Lưu sản phẩm'}
                         </button>
                     </div>
