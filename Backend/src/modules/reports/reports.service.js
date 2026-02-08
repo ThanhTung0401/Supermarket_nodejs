@@ -50,16 +50,23 @@ export class ReportsService {
         };
     }
 
-    // 2. Biểu đồ doanh thu 7 ngày gần nhất
-    // (Lưu ý: Để đơn giản và tương thích mọi DB, ta xử lý gom nhóm bằng JS thay vì Raw Query phức tạp)
-    async getRevenueChart() {
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        sevenDaysAgo.setHours(0, 0, 0, 0);
+    // 2. Biểu đồ doanh thu theo tháng
+    async getRevenueChart(query) {
+        const { month, year } = query || {};
+
+        const now = new Date();
+        const targetMonth = month ? parseInt(month) - 1 : now.getMonth(); // JS Month 0-11
+        const targetYear = year ? parseInt(year) : now.getFullYear();
+
+        const startDate = new Date(targetYear, targetMonth, 1);
+        const endDate = new Date(targetYear, targetMonth + 1, 0, 23, 59, 59); // Cuối tháng
 
         const invoices = await prisma.invoice.findMany({
             where: {
-                createdAt: { gte: sevenDaysAgo },
+                createdAt: {
+                    gte: startDate,
+                    lte: endDate
+                },
                 status: 'COMPLETED'
             },
             select: { createdAt: true, totalAmount: true }
@@ -67,15 +74,25 @@ export class ReportsService {
 
         // Gom nhóm theo ngày (Format YYYY-MM-DD)
         const revenueMap = {};
+
+        // Khởi tạo tất cả các ngày trong tháng với giá trị 0
+        const daysInMonth = endDate.getDate();
+        for (let i = 1; i <= daysInMonth; i++) {
+            const dayStr = `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+            revenueMap[dayStr] = 0;
+        }
+
         invoices.forEach(inv => {
             const date = inv.createdAt.toISOString().split('T')[0];
-            if (!revenueMap[date]) revenueMap[date] = 0;
-            revenueMap[date] += Number(inv.totalAmount);
+            if (revenueMap[date] !== undefined) {
+                revenueMap[date] += Number(inv.totalAmount);
+            }
         });
 
-        // Chuyển về dạng mảng cho Frontend vẽ biểu đồ
+        // Chuyển về dạng mảng
         return Object.keys(revenueMap).map(date => ({
             date,
+            day: date.split('-')[2], // Lấy ngày để hiển thị trục X cho gọn
             revenue: revenueMap[date]
         })).sort((a, b) => new Date(a.date) - new Date(b.date));
     }

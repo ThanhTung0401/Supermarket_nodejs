@@ -19,7 +19,8 @@ export class ReportsController {
 
     getRevenueChart = async (req, res, next) => {
         try {
-            const chartData = await this.reportsService.getRevenueChart();
+            // Truyền req.query (month, year) vào service
+            const chartData = await this.reportsService.getRevenueChart(req.query);
             res.status(200).json({
                 status: 'success',
                 data: chartData

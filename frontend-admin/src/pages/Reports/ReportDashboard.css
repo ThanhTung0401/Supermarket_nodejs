@@ -51,6 +51,33 @@
     margin-bottom: 30px;
 }
 
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+.chart-header h3 {
+    margin: 0;
+    color: #333;
+}
+
+.chart-filters {
+    display: flex;
+    gap: 10px;
+}
+
+.chart-filters select {
+    padding: 6px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
 .chart-wrapper {
     margin-top: 20px;
 }

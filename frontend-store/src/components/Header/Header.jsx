@@ -50,7 +50,7 @@ const Header = () => {
         <header className="store-header">
             <div className="container header-content">
                 <Link to="/" className="logo">
-                    🛒 SuperMarket
+                    FRESH NODEJS MART
                 </Link>
 
                 <div className="search-bar">
