@@ -4,12 +4,13 @@ import ApiError from '../../utils/ApiError.js';
 export class StoreService {
 
     // 1. Lấy danh sách sản phẩm (Public View)
-    // Chỉ lấy hàng đang bán (isActive=true) và ẩn giá vốn
     async getPublicProducts(query) {
         const { search, categoryId, page = 1, limit = 20 } = query;
         const skip = (page - 1) * limit;
 
-        const filter = { isActive: true };
+        // Tạm thời bỏ filter isActive để debug
+        const filter = {}; 
+        // const filter = { isActive: true };
 
         if (search) {
             filter.name = { contains: search, mode: 'insensitive' };
@@ -27,12 +28,13 @@ export class StoreService {
                     id: true,
                     name: true,
                     barcode: true,
-                    retailPrice: true, // Chỉ lấy giá bán
+                    retailPrice: true,
                     imageUrl: true,
                     unit: true,
                     packingQuantity: true,
-                    stockQuantity: true, // Hiển thị tồn kho để khách biết còn hàng không
-                    category: { select: { name: true } }
+                    stockQuantity: true,
+                    category: { select: { name: true } },
+                    isActive: true // Lấy thêm isActive để check
                 },
                 orderBy: { createdAt: 'desc' }
             }),
@@ -59,22 +61,18 @@ export class StoreService {
     // 3. Đặt hàng Online (Checkout)
     async createOnlineOrder(customerId, data) {
         const { items, voucherCode, deliveryAddress, paymentMethod } = data;
-        // items: [{ productId, quantity }]
 
         return prisma.$transaction(async (tx) => {
             let totalAmount = 0;
             const invoiceItemsData = [];
 
-            // Tính toán tiền hàng
             for (const item of items) {
                 const product = await tx.product.findUnique({where: {id: item.productId}});
 
-                if (!product || !product.isActive) {
+                if (!product) { // Bỏ check isActive tạm thời
                     throw new ApiError(400, `Sản phẩm ID ${item.productId} không khả dụng`);
                 }
 
-                // Lưu ý: Đặt online vẫn cho đặt dù hết hàng (để nhân viên gọi confirm sau)
-                // hoặc chặn luôn tùy policy. Ở đây ta chặn nếu kho = 0.
                 if (product.stockQuantity < item.quantity) {
                     throw new ApiError(400, `Sản phẩm ${product.name} tạm hết hàng`);
                 }
@@ -91,14 +89,12 @@ export class StoreService {
                 });
             }
 
-            // Xử lý Voucher (Copy logic từ Sales Service nhưng áp dụng cho đơn online)
             let discountAmount = 0;
             let voucherId = null;
 
             if (voucherCode) {
                 const voucher = await tx.voucher.findUnique({where: {code: voucherCode}});
                 if (voucher && voucher.isActive) {
-                    // Check hạn sử dụng...
                     if (voucher.type === 'PERCENTAGE') {
                         discountAmount = totalAmount * (Number(voucher.value) / 100);
                         if (voucher.maxDiscount && discountAmount > Number(voucher.maxDiscount)) {
@@ -109,7 +105,6 @@ export class StoreService {
                     }
                     voucherId = voucher.id;
 
-                    // Tăng lượt dùng
                     await tx.voucher.update({
                         where: {id: voucher.id},
                         data: {usedCount: {increment: 1}}
@@ -119,17 +114,15 @@ export class StoreService {
 
             const finalAmount = totalAmount - discountAmount;
 
-            // Tạo đơn hàng (Trạng thái PENDING)
-            // Lưu ý: Chưa trừ kho ngay lúc này (để Admin duyệt mới trừ - xem logic module Orders)
             const invoice = await tx.invoice.create({
                 data: {
                     code: `WEB-${Date.now()}`,
-                    customerId: customerId,
+                    customerId: parseInt(customerId), // Ép kiểu int
                     voucherId,
                     totalAmount: finalAmount,
                     discountAmount,
                     paymentMethod: paymentMethod || 'COD',
-                    status: 'PENDING', // Chờ duyệt
+                    status: 'PENDING',
                     source: 'ONLINE',
                     deliveryAddress,
                     items: {
@@ -144,19 +137,24 @@ export class StoreService {
 
     // 4. Lịch sử đơn hàng của tôi
     async getMyOrders(customerId) {
-        return prisma.invoice.findMany({
-            where: {customerId: customerId},
+        console.log("Service getMyOrders called with ID:", customerId); // Log ID nhận được
+        
+        const orders = await prisma.invoice.findMany({
+            where: { customerId: parseInt(customerId) }, 
             include: {
                 items: {
                     select: {
                         quantity: true,
                         unitPrice: true,
+                        totalPrice: true, 
                         product: {select: {name: true, imageUrl: true}}
                     }
                 }
             },
             orderBy: {createdAt: 'desc'}
         });
+        
+        console.log("Service found orders:", orders.length); // Log kết quả tìm thấy
+        return orders;
     }
 }
-

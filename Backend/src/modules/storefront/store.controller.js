@@ -21,7 +21,7 @@ export class StoreController {
 
     createOrder = async (req, res, next) => {
         try {
-            // req.customer lấy từ middleware protectCustomer
+            console.log("Creating order for customer:", req.customer.id); // Debug
             const order = await this.storeService.createOnlineOrder(req.customer.id, req.body);
             res.status(201).json({ status: 'success', data: order });
         } catch (e) { next(e); }
@@ -29,7 +29,9 @@ export class StoreController {
 
     getMyOrders = async (req, res, next) => {
         try {
+            console.log("Getting orders for customer:", req.customer.id); // Debug
             const orders = await this.storeService.getMyOrders(req.customer.id);
+            console.log("Found orders:", orders.length); // Debug
             res.status(200).json({ status: 'success', data: orders });
         } catch (e) { next(e); }
     };
