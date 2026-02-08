@@ -10,20 +10,26 @@ const categoriesController = new CategoriesController();
 
 // --- Categories Routes ---
 router.route('/categories')
-    .get(protect, categoriesController.getAll)                                     // Lấy danh sách category (cần đăng nhập)
-    .post(protect, restrictTo('ADMIN', 'MANAGER'), categoriesController.create);   // Tạo category (ADMIN, MANAGER)
+    .get(protect, categoriesController.getAll)
+    .post(protect, restrictTo('ADMIN', 'MANAGER'), categoriesController.create);
+
 router.route('/categories/:id')
-    .get(protect, categoriesController.getOne);                                    // Lấy chi tiết category và các sản phẩm bên trong
+    .get(protect, categoriesController.getOne)
+    .patch(protect, restrictTo('ADMIN', 'MANAGER'), categoriesController.update)
+    .delete(protect, restrictTo('ADMIN', 'MANAGER'), categoriesController.delete);
 
 // --- Products Routes ---
 router.route('/')
-    .get(protect, productsController.getAll)                                       // Lấy danh sách sản phẩm (có filter)
-    .post(protect, restrictTo('ADMIN', 'MANAGER'), productsController.create);     // Tạo sản phẩm (ADMIN, MANAGER)
+    .get(protect, productsController.getAll)
+    .post(protect, restrictTo('ADMIN', 'MANAGER'), productsController.create);
 
-router.get('/barcode/:barcode', protect, productsController.getBarcode);           // Lấy SP theo barcode
+router.get('/barcode/:barcode', protect, productsController.getBarcode);
+
+router.patch('/:id/restore', protect, restrictTo('ADMIN', 'MANAGER'), productsController.restore);
+router.delete('/:id/hard-delete', protect, restrictTo('ADMIN'), productsController.hardDelete); // Chỉ Admin mới được xóa vĩnh viễn
 
 router.route('/:id')
-    .patch(protect, restrictTo('ADMIN', 'MANAGER'), productsController.update)     // Cập nhật SP
-    .delete(protect, restrictTo('ADMIN', 'MANAGER'), productsController.delete);   // Xóa mềm (isActive = false)
+    .patch(protect, restrictTo('ADMIN', 'MANAGER'), productsController.update)
+    .delete(protect, restrictTo('ADMIN', 'MANAGER'), productsController.delete);
 
 export default router;

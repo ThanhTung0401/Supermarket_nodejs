@@ -1,0 +1,257 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import inventoryApi from '../../api/inventoryApi';
+import partnerApi from '../../api/partnerApi';
+import productApi from '../../api/productApi';
+import './ImportReceiptForm.css';
+
+const ImportReceiptForm = () => {
+    const navigate = useNavigate();
+    const [suppliers, setSuppliers] = useState([]);
+    const [products, setProducts] = useState([]);
+    const [loading, setLoading] = useState(false);
+    
+    // Form Data
+    const [supplierId, setSupplierId] = useState('');
+    const [note, setNote] = useState('');
+    const [items, setItems] = useState([
+        { productId: '', quantity: 1, unitCost: 0, productName: '', stock: 0, unit: '', retailPrice: 0 }
+    ]);
+
+    // Load Suppliers & Products
+    useEffect(() => {
+        const initData = async () => {
+            try {
+                const [supRes, prodRes] = await Promise.all([
+                    partnerApi.getAll({ limit: 100 }),
+                    productApi.getAll({ limit: 1000, isActive: 'true' })
+                ]);
+
+                // Xử lý Suppliers
+                if (supRes?.status === 'success') {
+                    if (supRes.data && Array.isArray(supRes.data.suppliers)) {
+                        setSuppliers(supRes.data.suppliers);
+                    } else if (Array.isArray(supRes.data)) {
+                        setSuppliers(supRes.data);
+                    } else {
+                        setSuppliers([]);
+                    }
+                }
+
+                // Xử lý Products (Sửa lỗi đọc sai cấu trúc)
+                if (prodRes?.status === 'success') {
+                    // Backend ProductsController trả về: { status: "success", data: [Array Products] }
+                    // Nên prodRes.data chính là mảng sản phẩm
+                    if (Array.isArray(prodRes.data)) {
+                        setProducts(prodRes.data);
+                    } else if (prodRes.data && Array.isArray(prodRes.data.products)) {
+                        // Fallback nếu backend thay đổi
+                        setProducts(prodRes.data.products);
+                    } else {
+                        console.warn("Unexpected product data structure:", prodRes);
+                        setProducts([]);
+                    }
+                }
+            } catch (err) {
+                console.error("Lỗi tải dữ liệu:", err);
+            }
+        };
+        initData();
+    }, []);
+
+    // Thêm dòng sản phẩm
+    const handleAddItem = () => {
+        setItems([...items, { productId: '', quantity: 1, unitCost: 0, productName: '', stock: 0, unit: '', retailPrice: 0 }]);
+    };
+
+    // Xóa dòng
+    const handleRemoveItem = (index) => {
+        const newItems = items.filter((_, i) => i !== index);
+        setItems(newItems);
+    };
+
+    // Thay đổi thông tin dòng
+    const handleItemChange = (index, field, value) => {
+        const newItems = [...items];
+        newItems[index][field] = value;
+
+        if (field === 'productId') {
+            const selectedProd = products.find(p => p.id == value);
+            if (selectedProd) {
+                newItems[index].productName = selectedProd.name;
+                newItems[index].stock = selectedProd.stockQuantity;
+                newItems[index].unitCost = selectedProd.importPrice || 0;
+                newItems[index].unit = selectedProd.unit || '';
+                newItems[index].retailPrice = Number(selectedProd.retailPrice) || 0; // Lưu giá bán để so sánh
+            }
+        }
+
+        setItems(newItems);
+    };
+
+    // Tính tổng tiền
+    const totalAmount = items.reduce((sum, item) => sum + (item.quantity * item.unitCost), 0);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!supplierId) return alert("Vui lòng chọn nhà cung cấp");
+        if (items.some(i => !i.productId || i.quantity <= 0 || i.unitCost < 0)) {
+            return alert("Vui lòng kiểm tra lại thông tin sản phẩm (số lượng > 0, giá >= 0)");
+        }
+
+        // Cảnh báo nếu giá nhập > giá bán
+        const warningItems = items.filter(i => i.unitCost > i.retailPrice);
+        if (warningItems.length > 0) {
+            const confirm = window.confirm(`CẢNH BÁO: Có ${warningItems.length} sản phẩm có giá nhập CAO HƠN giá bán lẻ hiện tại. Bạn có chắc chắn muốn nhập?`);
+            if (!confirm) return;
+        }
+
+        setLoading(true);
+        try {
+            const payload = {
+                supplierId: Number(supplierId),
+                note,
+                items: items.map(i => ({
+                    productId: Number(i.productId),
+                    quantity: Number(i.quantity),
+                    unitCost: Number(i.unitCost)
+                }))
+            };
+
+            await inventoryApi.createImportReceipt(payload);
+            alert("Tạo phiếu nhập thành công!");
+            navigate('/inventory');
+        } catch (err) {
+            console.error(err);
+            alert("Lỗi: " + (err.response?.data?.message || "Tạo phiếu thất bại"));
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="import-form-container">
+            <div className="page-header">
+                <h2>Tạo Phiếu Nhập Hàng</h2>
+                <button className="btn-back" onClick={() => navigate('/inventory')}>Quay lại</button>
+            </div>
+
+            <form onSubmit={handleSubmit}>
+                {/* Thông tin chung */}
+                <div className="section-card">
+                    <h3>Thông tin chung</h3>
+                    <div className="form-row">
+                        <div className="form-group">
+                            <label>Nhà cung cấp <span className="required">*</span></label>
+                            <select 
+                                value={supplierId} 
+                                onChange={(e) => setSupplierId(e.target.value)} 
+                                required
+                            >
+                                <option value="">-- Chọn nhà cung cấp --</option>
+                                {suppliers.map(s => (
+                                    <option key={s.id} value={s.id}>{s.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="form-group">
+                            <label>Ghi chú</label>
+                            <input 
+                                type="text" 
+                                value={note} 
+                                onChange={(e) => setNote(e.target.value)} 
+                                placeholder="VD: Nhập hàng tháng 10..."
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Danh sách sản phẩm */}
+                <div className="section-card">
+                    <h3>Chi tiết nhập hàng</h3>
+                    <table className="import-table">
+                        <thead>
+                            <tr>
+                                <th style={{width: '35%'}}>Sản phẩm</th>
+                                <th style={{width: '10%'}}>Đơn vị</th>
+                                <th style={{width: '10%'}}>Tồn</th>
+                                <th style={{width: '15%'}}>Số lượng nhập</th>
+                                <th style={{width: '15%'}}>Đơn giá nhập</th>
+                                <th style={{width: '10%'}}>Thành tiền</th>
+                                <th style={{width: '5%'}}></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {items.map((item, index) => (
+                                <tr key={index}>
+                                    <td>
+                                        <select 
+                                            value={item.productId} 
+                                            onChange={(e) => handleItemChange(index, 'productId', e.target.value)}
+                                            required
+                                            className="product-select"
+                                        >
+                                            <option value="">-- Chọn sản phẩm --</option>
+                                            {products.map(p => (
+                                                <option key={p.id} value={p.id}>
+                                                    {p.barcode} - {p.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {item.retailPrice > 0 && (
+                                            <div style={{fontSize: '0.8rem', color: '#6b7280', marginTop: '4px'}}>
+                                                Giá bán: {item.retailPrice.toLocaleString()}
+                                            </div>
+                                        )}
+                                    </td>
+                                    <td>{item.unit}</td>
+                                    <td>{item.stock}</td>
+                                    <td>
+                                        <input 
+                                            type="number" 
+                                            value={item.quantity} 
+                                            onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
+                                            min="1" required
+                                        />
+                                    </td>
+                                    <td>
+                                        <input 
+                                            type="number" 
+                                            value={item.unitCost} 
+                                            onChange={(e) => handleItemChange(index, 'unitCost', e.target.value)}
+                                            min="0" required
+                                            style={{borderColor: item.unitCost > item.retailPrice ? '#ef4444' : '#d1d5db'}}
+                                        />
+                                        {item.unitCost > item.retailPrice && (
+                                            <div style={{fontSize: '0.75rem', color: '#ef4444', marginTop: '2px'}}>Cao hơn giá bán!</div>
+                                        )}
+                                    </td>
+                                    <td>{Number(item.quantity * item.unitCost).toLocaleString()}</td>
+                                    <td>
+                                        {items.length > 1 && (
+                                            <button type="button" className="btn-remove" onClick={() => handleRemoveItem(index)}>×</button>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                    <button type="button" className="btn-add-row" onClick={handleAddItem}>+ Thêm dòng</button>
+                </div>
+
+                {/* Tổng kết */}
+                <div className="summary-section">
+                    <div className="total-row">
+                        <span>Tổng tiền:</span>
+                        <span className="total-amount">{totalAmount.toLocaleString()} đ</span>
+                    </div>
+                    <button type="submit" className="btn-submit" disabled={loading}>
+                        {loading ? 'Đang xử lý...' : 'Hoàn tất nhập hàng'}
+                    </button>
+                </div>
+            </form>
+        </div>
+    );
+};
+
+export default ImportReceiptForm;

@@ -44,4 +44,18 @@ export class ProductsController{
             res.status(200).json({ status: 'success', data: deleted });
         } catch (e) { next(e); }
     }
+
+    restore = async (req, res, next)=> {
+        try {
+            const restored = await this.productsService.restoreProduct(req.params.id);
+            res.status(200).json({ status: 'success', data: restored });
+        } catch (e) { next(e); }
+    }
+
+    hardDelete = async (req, res, next)=> {
+        try {
+            await this.productsService.hardDeleteProduct(req.params.id);
+            res.status(204).json({ status: 'success', data: null });
+        } catch (e) { next(e); }
+    }
 }
