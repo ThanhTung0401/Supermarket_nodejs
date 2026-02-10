@@ -9,11 +9,12 @@ const storeController = new StoreController();
 // --- PUBLIC ROUTES (Ai cũng xem được) ---
 router.get('/products', storeController.getProducts);
 router.get('/products/:id', storeController.getProductDetail);
+router.get('/categories', storeController.getCategories); // API mới
 
 // --- PROTECTED ROUTES (Phải đăng nhập tài khoản Khách hàng) ---
 router.use(protectCustomer);
 
-router.post('/orders', storeController.createOrder); // Đặt hàng
-router.get('/orders', storeController.getMyOrders);  // Xem lịch sử
+router.post('/orders', storeController.createOrder);
+router.get('/orders', storeController.getMyOrders);
 
 export default router;

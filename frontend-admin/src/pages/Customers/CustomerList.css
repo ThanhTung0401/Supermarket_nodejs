@@ -21,13 +21,26 @@
     cursor: pointer;
 }
 
+.toolbar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
 .search-input {
-    width: 100%;
+    flex: 1;
     max-width: 400px;
     padding: 10px;
     border: 1px solid #d1d5db;
     border-radius: 6px;
-    margin-bottom: 20px;
+}
+
+.rank-select {
+    padding: 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    min-width: 150px;
+    cursor: pointer;
 }
 
 .table-container {
@@ -58,6 +71,15 @@ th {
     border-radius: 12px;
     font-size: 0.85rem;
     font-weight: 600;
+}
+
+.rank-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    display: inline-block;
 }
 
 .btn-action {

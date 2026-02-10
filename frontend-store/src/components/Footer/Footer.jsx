@@ -37,7 +37,7 @@ const Footer = () => {
                         <li>Lương Kiện Minh - 3124560069</li>
                         <li>Nguyễn Minh Tú - 3124560094</li>
                         <li>Đoàn Huỳnh Đăng Khoa - 3124560041</li>
-                        <li>Nguyễn Hữu Thắng - 312456xxxx</li>
+                        <li>Nguyễn Hữu Thắng - 3124560084</li>
 
                     </ul>
                 </div>

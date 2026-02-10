@@ -17,9 +17,17 @@ const storeApi = {
     },
 
     getMyOrders() {
-        // Sửa lại đường dẫn cho khớp với Backend (/api/store/orders)
         const url = '/store/orders';
         return axiosClient.get(url);
+    },
+
+    getCategories() { // Thêm API lấy danh mục cho Store
+        const url = '/store/products'; // Tạm thời chưa có API riêng lấy category public, dùng tạm hoặc tạo mới
+        // Tuy nhiên, tốt nhất là tạo API riêng.
+        // Ở đây tôi sẽ dùng API của Admin nếu nó public, hoặc tạo mới.
+        // Kiểm tra lại routes.js của Admin -> /products/categories cần login.
+        // Vậy ta cần tạo thêm API public lấy category.
+        return axiosClient.get('/store/categories'); // Giả định sẽ tạo route này
     }
 };
 

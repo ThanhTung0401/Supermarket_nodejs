@@ -1,9 +1,88 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import inventoryApi from '../../api/inventoryApi';
 import partnerApi from '../../api/partnerApi';
 import productApi from '../../api/productApi';
 import './ImportReceiptForm.css';
+
+// Component tìm kiếm sản phẩm
+const ProductSearchSelect = ({ products, value, onChange, placeholder }) => {
+    const [searchTerm, setSearchTerm] = useState('');
+    const [isOpen, setIsOpen] = useState(false);
+    const wrapperRef = useRef(null);
+
+    // Tìm sản phẩm đang được chọn để hiển thị tên
+    const selectedProduct = products.find(p => p.id == value);
+
+    // Lọc danh sách theo từ khóa
+    const filteredProducts = products.filter(p => 
+        p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        p.barcode.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    // Xử lý click ra ngoài để đóng dropdown
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    const handleSelect = (product) => {
+        onChange(product.id);
+        setIsOpen(false);
+        setSearchTerm(''); // Reset search
+    };
+
+    return (
+        <div className="product-search-select" ref={wrapperRef}>
+            <div 
+                className="selected-display" 
+                onClick={() => setIsOpen(!isOpen)}
+            >
+                {selectedProduct ? (
+                    <span>{selectedProduct.barcode} - {selectedProduct.name}</span>
+                ) : (
+                    <span className="placeholder">{placeholder}</span>
+                )}
+                <span className="arrow">▼</span>
+            </div>
+
+            {isOpen && (
+                <div className="dropdown-list">
+                    <input 
+                        type="text" 
+                        className="search-input-small"
+                        placeholder="Nhập tên hoặc mã vạch..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        autoFocus
+                        onClick={(e) => e.stopPropagation()} // Ngăn đóng khi click input
+                    />
+                    <div className="list-items">
+                        {filteredProducts.length > 0 ? (
+                            filteredProducts.map(p => (
+                                <div 
+                                    key={p.id} 
+                                    className={`list-item ${p.id == value ? 'active' : ''}`}
+                                    onClick={() => handleSelect(p)}
+                                >
+                                    <div className="item-name">{p.name}</div>
+                                    <div className="item-barcode">{p.barcode}</div>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="no-result">Không tìm thấy sản phẩm</div>
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
 
 const ImportReceiptForm = () => {
     const navigate = useNavigate();
@@ -27,7 +106,6 @@ const ImportReceiptForm = () => {
                     productApi.getAll({ limit: 1000, isActive: 'true' })
                 ]);
 
-                // Xử lý Suppliers
                 if (supRes?.status === 'success') {
                     if (supRes.data && Array.isArray(supRes.data.suppliers)) {
                         setSuppliers(supRes.data.suppliers);
@@ -38,17 +116,12 @@ const ImportReceiptForm = () => {
                     }
                 }
 
-                // Xử lý Products (Sửa lỗi đọc sai cấu trúc)
                 if (prodRes?.status === 'success') {
-                    // Backend ProductsController trả về: { status: "success", data: [Array Products] }
-                    // Nên prodRes.data chính là mảng sản phẩm
                     if (Array.isArray(prodRes.data)) {
                         setProducts(prodRes.data);
                     } else if (prodRes.data && Array.isArray(prodRes.data.products)) {
-                        // Fallback nếu backend thay đổi
                         setProducts(prodRes.data.products);
                     } else {
-                        console.warn("Unexpected product data structure:", prodRes);
                         setProducts([]);
                     }
                 }
@@ -82,7 +155,7 @@ const ImportReceiptForm = () => {
                 newItems[index].stock = selectedProd.stockQuantity;
                 newItems[index].unitCost = selectedProd.importPrice || 0;
                 newItems[index].unit = selectedProd.unit || '';
-                newItems[index].retailPrice = Number(selectedProd.retailPrice) || 0; // Lưu giá bán để so sánh
+                newItems[index].retailPrice = Number(selectedProd.retailPrice) || 0;
             }
         }
 
@@ -184,20 +257,13 @@ const ImportReceiptForm = () => {
                         <tbody>
                             {items.map((item, index) => (
                                 <tr key={index}>
-                                    <td>
-                                        <select 
-                                            value={item.productId} 
-                                            onChange={(e) => handleItemChange(index, 'productId', e.target.value)}
-                                            required
-                                            className="product-select"
-                                        >
-                                            <option value="">-- Chọn sản phẩm --</option>
-                                            {products.map(p => (
-                                                <option key={p.id} value={p.id}>
-                                                    {p.barcode} - {p.name}
-                                                </option>
-                                            ))}
-                                        </select>
+                                    <td style={{overflow: 'visible'}}> {/* Cho phép dropdown tràn ra ngoài */}
+                                        <ProductSearchSelect 
+                                            products={products}
+                                            value={item.productId}
+                                            onChange={(val) => handleItemChange(index, 'productId', val)}
+                                            placeholder="-- Chọn sản phẩm --"
+                                        />
                                         {item.retailPrice > 0 && (
                                             <div style={{fontSize: '0.8rem', color: '#6b7280', marginTop: '4px'}}>
                                                 Giá bán: {item.retailPrice.toLocaleString()}

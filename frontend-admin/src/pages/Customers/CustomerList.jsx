@@ -1,26 +1,51 @@
 import React, { useState, useEffect } from 'react';
 import customerApi from '../../api/customerApi';
-import CustomerDetail from './CustomerDetail'; // Import Modal chi tiết
+import CustomerDetail from './CustomerDetail';
 import './CustomerList.css';
+
+// Định nghĩa Rank (nên tách ra file constants dùng chung nếu có thể)
+const RANKS = {
+    BRONZE: { name: 'Đồng', color: '#CD7F32' },
+    SILVER: { name: 'Bạc', color: '#C0C0C0' },
+    GOLD: { name: 'Vàng', color: '#FFD700' },
+    PLATINUM: { name: 'Bạch Kim', color: '#E5E4E2' },
+    EMERALD: { name: 'Lục Bảo', color: '#50C878' },
+    RUBY: { name: 'Ruby', color: '#E0115F' },
+    DIAMOND: { name: 'Kim Cương', color: '#B9F2FF' }
+};
+
+const getRankByPoints = (points) => {
+    // Logic này phải khớp với Backend
+    if (points >= 10000) return 'DIAMOND';
+    if (points >= 5000) return 'RUBY';
+    if (points >= 2000) return 'EMERALD';
+    if (points >= 1000) return 'PLATINUM';
+    if (points >= 500) return 'GOLD';
+    if (points >= 100) return 'SILVER';
+    return 'BRONZE';
+};
 
 const CustomerList = () => {
     const [customers, setCustomers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedRank, setSelectedRank] = useState(''); // Filter Rank
     
-    // Modal Form (Thêm/Sửa)
     const [showFormModal, setShowFormModal] = useState(false);
     const [currentCustomer, setCurrentCustomer] = useState(null);
     const [formData, setFormData] = useState({ name: '', phone: '', email: '', address: '' });
 
-    // Modal Detail (Xem chi tiết)
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedCustomer, setSelectedCustomer] = useState(null);
 
     const fetchCustomers = async () => {
         setLoading(true);
         try {
-            const res = await customerApi.getAll({ search: searchTerm });
+            const params = {
+                search: searchTerm,
+                rank: selectedRank || undefined
+            };
+            const res = await customerApi.getAll(params);
             if (res?.status === 'success') {
                 if (res.customers) {
                     setCustomers(res.customers);
@@ -42,7 +67,7 @@ const CustomerList = () => {
             fetchCustomers();
         }, 500);
         return () => clearTimeout(timer);
-    }, [searchTerm]);
+    }, [searchTerm, selectedRank]); // Thêm selectedRank vào dependency
 
     // --- Logic Form ---
     const handleAdd = () => {
@@ -69,7 +94,7 @@ const CustomerList = () => {
                 fetchCustomers();
                 alert('Xóa thành công');
             } catch (err) {
-                alert('Lỗi: ' + (err.response?.data?.message || 'Không thể xóa khách hàng này (có thể do đã có lịch sử mua hàng).'));
+                alert('Lỗi: ' + (err.response?.data?.message || 'Không thể xóa khách hàng này.'));
             }
         }
     };
@@ -93,7 +118,6 @@ const CustomerList = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    // --- Logic Detail ---
     const handleViewDetail = (customer) => {
         setSelectedCustomer(customer);
         setShowDetailModal(true);
@@ -114,6 +138,17 @@ const CustomerList = () => {
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="search-input"
                 />
+                
+                <select 
+                    className="rank-select" 
+                    value={selectedRank} 
+                    onChange={(e) => setSelectedRank(e.target.value)}
+                >
+                    <option value="">Tất cả hạng</option>
+                    {Object.entries(RANKS).map(([key, rank]) => (
+                        <option key={key} value={key}>{rank.name}</option>
+                    ))}
+                </select>
             </div>
 
             <div className="table-container">
@@ -124,34 +159,49 @@ const CustomerList = () => {
                                 <th>ID</th>
                                 <th>Tên khách hàng</th>
                                 <th>Số điện thoại</th>
-                                <th>Email</th>
+                                <th>Hạng thành viên</th>
                                 <th>Điểm tích lũy</th>
                                 <th>Hành động</th>
                             </tr>
                         </thead>
                         <tbody>
                             {customers.length > 0 ? (
-                                customers.map(cus => (
-                                    <tr key={cus.id}>
-                                        <td>{cus.id}</td>
-                                        <td 
-                                            style={{cursor: 'pointer', color: '#6366f1', fontWeight: '500'}}
-                                            onClick={() => handleViewDetail(cus)}
-                                            title="Xem chi tiết"
-                                        >
-                                            {cus.name}
-                                        </td>
-                                        <td>{cus.phone}</td>
-                                        <td>{cus.email}</td>
-                                        <td>
-                                            <span className="points-badge">{cus.points} điểm</span>
-                                        </td>
-                                        <td>
-                                            <button className="btn-action edit" onClick={() => handleEdit(cus)}>Sửa</button>
-                                            <button className="btn-action delete" onClick={() => handleDelete(cus.id)}>Xóa</button>
-                                        </td>
-                                    </tr>
-                                ))
+                                customers.map(cus => {
+                                    const rankCode = getRankByPoints(cus.points);
+                                    const rank = RANKS[rankCode];
+                                    return (
+                                        <tr key={cus.id}>
+                                            <td>{cus.id}</td>
+                                            <td 
+                                                style={{cursor: 'pointer', color: '#6366f1', fontWeight: '500'}}
+                                                onClick={() => handleViewDetail(cus)}
+                                                title="Xem chi tiết"
+                                            >
+                                                {cus.name}
+                                            </td>
+                                            <td>{cus.phone}</td>
+                                            <td>
+                                                <span 
+                                                    className="rank-badge"
+                                                    style={{
+                                                        backgroundColor: rank.color + '20', // Thêm độ trong suốt
+                                                        color: rank.color === '#E5E4E2' ? '#333' : rank.color, // Xử lý màu bạch kim hơi sáng
+                                                        border: `1px solid ${rank.color}`
+                                                    }}
+                                                >
+                                                    {rank.name}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span className="points-badge">{cus.points} điểm</span>
+                                            </td>
+                                            <td>
+                                                <button className="btn-action edit" onClick={() => handleEdit(cus)}>Sửa</button>
+                                                <button className="btn-action delete" onClick={() => handleDelete(cus.id)}>Xóa</button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
                             ) : (
                                 <tr><td colSpan="6" style={{textAlign: 'center'}}>Không tìm thấy dữ liệu</td></tr>
                             )}
@@ -160,7 +210,6 @@ const CustomerList = () => {
                 )}
             </div>
 
-            {/* Modal Form (Thêm/Sửa) */}
             {showFormModal && (
                 <div className="modal-overlay">
                     <div className="modal-content">
@@ -196,7 +245,6 @@ const CustomerList = () => {
                 </div>
             )}
 
-            {/* Modal Detail (Xem chi tiết) */}
             {showDetailModal && (
                 <CustomerDetail 
                     customer={selectedCustomer} 
