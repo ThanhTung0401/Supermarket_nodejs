@@ -1,5 +1,6 @@
 import prisma from "../../config/prisma.js";
 import ApiError from "../../utils/ApiError.js";
+import { getRankByPoints } from "../../utils/constants.js";
 
 export class SalesService{
 
@@ -144,10 +145,21 @@ export class SalesService{
                 });
             }
 
-            // 2. Xử lý Voucher
+            // 2. Xử lý Giảm giá (Rank + Voucher)
             let discountAmount = 0;
             let voucherId = null;
 
+            // 2.1 Giảm giá theo Rank
+            if (customerId) {
+                const customer = await tx.customer.findUnique({ where: { id: parseInt(customerId) } });
+                if (customer) {
+                    const rank = getRankByPoints(customer.points);
+                    const rankDiscount = totalAmount * (rank.discount / 100);
+                    discountAmount += rankDiscount;
+                }
+            }
+
+            // 2.2 Giảm giá theo Voucher
             if (voucherCode) {
                 const voucher = await tx.voucher.findUnique({ where: { code: voucherCode } });
                 if (voucher && voucher.isActive) {
@@ -157,24 +169,32 @@ export class SalesService{
                         throw new ApiError(400, 'Voucher đã hết hạn hoặc chưa có hiệu lực!');
                     }
 
+                    let voucherDiscount = 0;
                     if (voucher.type === 'PERCENTAGE') {
-                        discountAmount = totalAmount * (Number(voucher.value) / 100);
-                        if (voucher.maxDiscount && discountAmount > Number(voucher.maxDiscount)) {
-                            discountAmount = Number(voucher.maxDiscount);
+                        voucherDiscount = totalAmount * (Number(voucher.value) / 100);
+                        if (voucher.maxDiscount && voucherDiscount > Number(voucher.maxDiscount)) {
+                            voucherDiscount = Number(voucher.maxDiscount);
                         }
                     } else {
-                        discountAmount = Number(voucher.value);
+                        voucherDiscount = Number(voucher.value);
                     }
-                    voucherId = voucher.id;
 
-                    // Tăng lượt dùng voucher
-                    await tx.voucher.update({
-                        where: { id: voucher.id },
-                        data: { usedCount: { increment: 1 } }
-                    });
+                    // Kiểm tra đơn tối thiểu
+                    if (totalAmount >= (voucher.minOrderValue || 0)) {
+                        discountAmount += voucherDiscount;
+                        voucherId = voucher.id;
+
+                        // Tăng lượt dùng voucher
+                        await tx.voucher.update({
+                            where: { id: voucher.id },
+                            data: { usedCount: { increment: 1 } }
+                        });
+                    }
                 }
             }
 
+            // Đảm bảo không giảm quá tổng tiền
+            if (discountAmount > totalAmount) discountAmount = totalAmount;
             const finalAmount = totalAmount - discountAmount;
             const code = `HD-${Date.now()}`;
 
@@ -244,7 +264,6 @@ export class SalesService{
                     }
                 });
                 
-                // Sửa lỗi string template: dùng backtick `
                 if(!originalItem){
                     throw new ApiError(400, `Sản phẩm ID ${item.productId} không có trong hóa đơn gốc.`);
                 }

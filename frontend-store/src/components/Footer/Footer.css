@@ -1,0 +1,110 @@
+.store-footer {
+    background-color: #1f2937; /* Màu nền tối chuyên nghiệp */
+    color: #f3f4f6;
+    padding-top: 60px;
+    margin-top: auto;
+    font-size: 0.95rem;
+}
+
+.footer-content {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1.5fr; /* Chia cột không đều */
+    gap: 40px;
+    padding-bottom: 40px;
+    border-bottom: 1px solid #374151;
+}
+
+.footer-title {
+    color: #ffffff;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    position: relative;
+}
+
+.footer-title::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -8px;
+    width: 40px;
+    height: 3px;
+    background-color: #3b82f6; /* Gạch chân xanh nổi bật */
+}
+
+/* Cột 1 */
+.subject-name {
+    font-size: 1.2rem;
+    color: #60a5fa; /* Màu xanh sáng */
+    margin: 0 0 5px 0;
+}
+
+.university {
+    font-weight: bold;
+    margin-bottom: 15px;
+    color: #e5e7eb;
+}
+
+.desc {
+    color: #9ca3af;
+    line-height: 1.6;
+    max-width: 400px;
+}
+
+/* Cột 2 */
+.links ul {
+    list-style: none;
+    padding: 0;
+}
+
+.links li {
+    margin-bottom: 10px;
+}
+
+.links a {
+    color: #d1d5db;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.links a:hover {
+    color: #60a5fa;
+    padding-left: 5px; /* Hiệu ứng di chuyển nhẹ */
+}
+
+/* Cột 3 */
+.contact p {
+    margin-bottom: 8px;
+    color: #d1d5db;
+}
+
+.student-list {
+    list-style: none;
+    padding: 0;
+    margin-top: 10px;
+}
+
+.student-list li {
+    margin-bottom: 6px;
+    color: #9ca3af;
+    font-size: 0.9rem;
+}
+
+/* Bottom */
+.footer-bottom {
+    padding: 20px 0;
+    text-align: center;
+    color: #6b7280;
+    font-size: 0.85rem;
+    background-color: #111827; /* Màu đậm hơn chút */
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .footer-content {
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+}

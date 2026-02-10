@@ -4,8 +4,8 @@ const reportApi = {
     getDashboardStats() {
         return axiosClient.get('/reports/dashboard');
     },
-    getRevenueChart() {
-        return axiosClient.get('/reports/revenue-chart');
+    getRevenueChart(params) { // Thêm params
+        return axiosClient.get('/reports/revenue-chart', { params });
     },
     getTopSelling() {
         return axiosClient.get('/reports/top-selling');

@@ -1,6 +1,7 @@
 import prisma from "../../config/prisma.js";
 import bcrypt from "bcryptjs";
 import ApiError from "../../utils/ApiError.js";
+import { CUSTOMER_RANKS } from "../../utils/constants.js";
 
 export class CustomersService{
     // 1. Tạo khách hàng (Dùng cho cả POS tạo nhanh và Khách tự đăng ký)
@@ -27,7 +28,7 @@ export class CustomersService{
 
     // 2. Lấy danh sách (Cho nhân viên tìm kiếm tại POS)
     async getAllCustomers(query) {
-        const { search, page = 1, limit = 20 } = query;
+        const { search, rank, page = 1, limit = 20 } = query;
         const skip = (page - 1) * limit;
 
         const filter = {};
@@ -37,6 +38,24 @@ export class CustomersService{
                 { name: { contains: search, mode: 'insensitive' } },
                 { email: { contains: search, mode: 'insensitive' } }
             ];
+        }
+
+        // Lọc theo Rank
+        if (rank && CUSTOMER_RANKS[rank]) {
+            const targetRank = CUSTOMER_RANKS[rank];
+            // Logic lọc rank: điểm >= minPoints của rank này VÀ < minPoints của rank kế tiếp
+            // Tuy nhiên để đơn giản, ta có thể lọc >= minPoints
+            // Hoặc chính xác hơn:
+            const ranks = Object.values(CUSTOMER_RANKS).sort((a, b) => a.minPoints - b.minPoints);
+            const currentIndex = ranks.findIndex(r => r.code === rank);
+            const nextRank = ranks[currentIndex + 1];
+
+            filter.points = {
+                gte: targetRank.minPoints
+            };
+            if (nextRank) {
+                filter.points.lt = nextRank.minPoints;
+            }
         }
 
         const [customers, total] = await Promise.all([

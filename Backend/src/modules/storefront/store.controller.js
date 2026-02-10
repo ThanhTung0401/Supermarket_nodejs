@@ -19,9 +19,15 @@ export class StoreController {
         } catch (e) { next(e); }
     };
 
+    getCategories = async (req, res, next) => {
+        try {
+            const categories = await this.storeService.getPublicCategories();
+            res.status(200).json({ status: 'success', data: categories });
+        } catch (e) { next(e); }
+    };
+
     createOrder = async (req, res, next) => {
         try {
-            // req.customer lấy từ middleware protectCustomer
             const order = await this.storeService.createOnlineOrder(req.customer.id, req.body);
             res.status(201).json({ status: 'success', data: order });
         } catch (e) { next(e); }

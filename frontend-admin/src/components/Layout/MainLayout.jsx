@@ -83,7 +83,7 @@ const MainLayout = () => {
         <div className="layout-container">
             <aside className="sidebar">
                 <div className="sidebar-header">
-                    <h2>Supermarket</h2>
+                    <h2>Fresh Nodejs Mart</h2>
                 </div>
                 <nav className="sidebar-nav">
                     <ul>

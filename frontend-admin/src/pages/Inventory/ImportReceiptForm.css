@@ -25,6 +25,7 @@
     border-radius: 8px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     margin-bottom: 20px;
+    /* overflow: visible;  Quan trọng để dropdown không bị cắt */
 }
 
 .section-card h3 {
@@ -78,9 +79,10 @@
 .import-table td {
     padding: 10px;
     border-bottom: 1px solid #e5e7eb;
+    vertical-align: top; /* Căn trên để dropdown mở xuống đẹp hơn */
 }
 
-.import-table input, .import-table select {
+.import-table input {
     width: 100%;
     padding: 8px;
     border: 1px solid #d1d5db;
@@ -128,6 +130,7 @@
     box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
     position: sticky;
     bottom: 0;
+    z-index: 10; /* Đảm bảo nổi lên trên */
 }
 
 .total-row {
@@ -159,4 +162,101 @@
 .btn-submit:disabled {
     background: #a7f3d0;
     cursor: not-allowed;
+}
+
+/* Product Search Select Styles */
+.product-search-select {
+    position: relative;
+    width: 100%;
+}
+
+.selected-display {
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 38px;
+}
+
+.selected-display:hover {
+    border-color: #9ca3af;
+}
+
+.placeholder {
+    color: #9ca3af;
+}
+
+.arrow {
+    font-size: 0.8rem;
+    color: #6b7280;
+}
+
+.dropdown-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    z-index: 100;
+    margin-top: 4px;
+    max-height: 300px;
+    display: flex;
+    flex-direction: column;
+}
+
+.search-input-small {
+    padding: 8px;
+    border: none;
+    border-bottom: 1px solid #eee;
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.list-items {
+    overflow-y: auto;
+    flex: 1;
+}
+
+.list-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #f9fafb;
+}
+
+.list-item:last-child {
+    border-bottom: none;
+}
+
+.list-item:hover {
+    background-color: #f3f4f6;
+}
+
+.list-item.active {
+    background-color: #e0e7ff;
+    color: #4338ca;
+}
+
+.item-name {
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.item-barcode {
+    font-size: 0.8rem;
+    color: #6b7280;
+}
+
+.no-result {
+    padding: 10px;
+    text-align: center;
+    color: #9ca3af;
+    font-size: 0.9rem;
 }

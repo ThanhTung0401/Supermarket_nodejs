@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import reportApi from '../../api/reportApi';
 import './ReportDashboard.css';
 
@@ -10,34 +10,51 @@ const ReportDashboard = () => {
     const [lowStock, setLowStock] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    // Filter State
+    const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth() + 1;
+    const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+    const [selectedYear, setSelectedYear] = useState(currentYear);
+
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [statsRes, chartRes, topRes, lowRes] = await Promise.all([
+                // Gọi song song các API không phụ thuộc filter
+                const [statsRes, topRes, lowRes] = await Promise.all([
                     reportApi.getDashboardStats(),
-                    reportApi.getRevenueChart(),
                     reportApi.getTopSelling(),
                     reportApi.getLowStock()
                 ]);
 
                 if (statsRes?.status === 'success') setStats(statsRes.data);
-                if (chartRes?.status === 'success') setRevenueData(chartRes.data);
                 if (topRes?.status === 'success') setTopSelling(topRes.data);
                 if (lowRes?.status === 'success') setLowStock(lowRes.data);
             } catch (error) {
-                console.error("Lỗi tải báo cáo:", error);
+                console.error("Lỗi tải báo cáo chung:", error);
             } finally {
                 setLoading(false);
             }
         };
-
         fetchData();
     }, []);
 
-    if (loading) return <div className="loading">Đang tải báo cáo...</div>;
+    // Gọi API biểu đồ khi filter thay đổi
+    useEffect(() => {
+        const fetchChart = async () => {
+            try {
+                const chartRes = await reportApi.getRevenueChart({ 
+                    month: selectedMonth, 
+                    year: selectedYear 
+                });
+                if (chartRes?.status === 'success') setRevenueData(chartRes.data);
+            } catch (error) {
+                console.error("Lỗi tải biểu đồ:", error);
+            }
+        };
+        fetchChart();
+    }, [selectedMonth, selectedYear]);
 
-    // Màu cho biểu đồ tròn
-    const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+    if (loading) return <div className="loading">Đang tải báo cáo...</div>;
 
     return (
         <div className="report-container">
@@ -65,14 +82,35 @@ const ReportDashboard = () => {
 
             {/* 2. Biểu đồ doanh thu */}
             <div className="chart-section">
-                <h3>Biểu đồ doanh thu 7 ngày gần nhất</h3>
+                <div className="chart-header">
+                    <h3>Biểu đồ doanh thu</h3>
+                    <div className="chart-filters">
+                        <select
+                            value={selectedMonth}
+                            onChange={(e) => setSelectedMonth(e.target.value)}
+                        >
+                            {Array.from({length: 12}, (_, i) => i + 1).map(m => (
+                                <option key={m} value={m}>Tháng {m}</option>
+                            ))}
+                        </select>
+                        <select
+                            value={selectedYear}
+                            onChange={(e) => setSelectedYear(e.target.value)}
+                        >
+                            {[currentYear, currentYear - 1, currentYear - 2].map(y => (
+                                <option key={y} value={y}>Năm {y}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+                
                 <div className="chart-wrapper">
                     <ResponsiveContainer width="100%" height={300}>
                         <BarChart data={revenueData}>
                             <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="date" />
-                            <YAxis />
-                            <Tooltip formatter={(value) => Number(value).toLocaleString() + ' đ'} />
+                            <XAxis dataKey="day" label={{ value: 'Ngày', position: 'insideBottomRight', offset: -5 }} />
+                            <YAxis tickFormatter={(value) => new Intl.NumberFormat('en', { notation: "compact", compactDisplay: "short" }).format(value)} />
+                            <Tooltip formatter={(value) => Number(value).toLocaleString() + ' đ'} labelFormatter={(label) => `Ngày ${label}/${selectedMonth}/${selectedYear}`} />
                             <Legend />
                             <Bar dataKey="revenue" name="Doanh thu" fill="#8884d8" />
                         </BarChart>
