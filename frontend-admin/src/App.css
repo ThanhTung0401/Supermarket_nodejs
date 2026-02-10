@@ -1,0 +1,5 @@
+/* Xóa hết các style mặc định của Vite */
+#root {
+  width: 100%;
+  height: 100%;
+}
