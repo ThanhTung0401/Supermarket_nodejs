@@ -1,7 +1,12 @@
 import axios from 'axios';
 
+// Tự động chọn URL:
+// - Nếu có biến môi trường VITE_API_URL (khi deploy) -> Dùng nó.
+// - Nếu không -> Dùng localhost (khi chạy dev).
+const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+
 const axiosClient = axios.create({
-    baseURL: 'http://localhost:8080/api', // Cập nhật đúng port và path của Backend
+    baseURL: baseURL,
     headers: {
         'Content-Type': 'application/json',
     },
@@ -19,24 +24,17 @@ axiosClient.interceptors.request.use((config) => {
 // Xử lý lỗi chung
 axiosClient.interceptors.response.use(
     (response) => {
-        // Trả về response.data để lấy trực tiếp body JSON từ server
-        // Ví dụ: { status: 'success', data: {...} }
         return response.data; 
     },
     (error) => {
         const { response } = error;
-        
         if (response && response.status === 401) {
             localStorage.removeItem('access_token');
             localStorage.removeItem('user_info');
-            
-            // Chỉ redirect nếu không phải đang ở trang login để tránh loop
             if (window.location.pathname !== '/login') {
                 window.location.href = '/login';
             }
         }
-        
-        // Ném lỗi ra để component xử lý tiếp (hiển thị thông báo...)
         return Promise.reject(error);
     }
 );
