@@ -1,7 +1,9 @@
 import axios from 'axios';
 
+const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+
 const axiosClient = axios.create({
-    baseURL: 'http://localhost:8080/api',
+    baseURL: baseURL,
     headers: {
         'Content-Type': 'application/json',
     },
@@ -9,7 +11,7 @@ const axiosClient = axios.create({
 
 // Interceptor cho Request
 axiosClient.interceptors.request.use((config) => {
-    const token = localStorage.getItem('customer_token'); // Dùng key khác với Admin
+    const token = localStorage.getItem('customer_token');
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
@@ -23,10 +25,8 @@ axiosClient.interceptors.response.use(
     },
     (error) => {
         if (error.response?.status === 401) {
-            // Xử lý logout nếu token hết hạn
             localStorage.removeItem('customer_token');
             localStorage.removeItem('customer_info');
-            // Có thể redirect hoặc hiện modal login
         }
         return Promise.reject(error);
     }
