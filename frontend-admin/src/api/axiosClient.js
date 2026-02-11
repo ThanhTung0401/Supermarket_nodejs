@@ -3,7 +3,7 @@ import axios from 'axios';
 // Tự động chọn URL:
 // - Nếu có biến môi trường VITE_API_URL (khi deploy) -> Dùng nó.
 // - Nếu không -> Dùng localhost (khi chạy dev).
-const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+const baseURL = 'http://localhost:8080/api';
 
 const axiosClient = axios.create({
     baseURL: baseURL,
