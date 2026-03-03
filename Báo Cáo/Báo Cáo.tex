@@ -1,0 +1,130 @@
+\documentclass[14pt, a4paper]{extarticle}
+
+% --- GÓI CƠ BẢN ---
+\usepackage[utf8]{inputenc}
+\usepackage[T5]{fontenc}
+\usepackage[vietnamese]{babel}
+\usepackage{mathptmx} % Font Times New Roman cho nội dung chi tiết
+
+% --- GÓI FONT HIỆN ĐẠI CHO TIÊU ĐỀ ---
+\usepackage[scaled]{helvet} 
+\renewcommand\familydefault{\rmdefault} 
+
+% --- GÓI ĐỒ HỌA, MÀU SẮC & VẼ ---
+\usepackage{graphicx}
+\usepackage[table,xcdraw]{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{calc} % ĐÃ FIX LỖI: Thêm thư viện tính toán tọa độ
+
+% --- CẤU HÌNH KHỔ GIẤY (Theo chuẩn báo cáo) ---
+\usepackage[top=2cm, bottom=2.5cm, left=3cm, right=2cm]{geometry}
+
+% --- ĐỊNH NGHĨA MÀU SẮC CHỦ ĐẠO ---
+\definecolor{sgublue}{RGB}{0, 85, 166} % Mã màu xanh dương của Đại học Sài Gòn
+\definecolor{techgray}{RGB}{90, 90, 90}
+
+\begin{document}
+
+\begin{titlepage}
+    % --- ĐƯỜNG KẺ TRÊN CÙNG ĐỂ BO GÓC NHÌN ---
+    \begin{tikzpicture}[remember picture, overlay]
+        \draw[sgublue, line width=4pt] 
+            ($(current page.north west) + (3cm,-1.5cm)$) -- 
+            ($(current page.north east) + (-2cm,-1.5cm)$);
+    \end{tikzpicture}
+
+    \vspace*{0.5cm}
+
+    % --- PHẦN HEADER (Tên trường) ---
+    \begin{center}
+        \sffamily % Font không chân
+        \textbf{\fontsize{14}{17}\selectfont TRƯỜNG ĐẠI HỌC SÀI GÒN}\\[0.2cm]
+        \textbf{\fontsize{14}{17}\selectfont KHOA CÔNG NGHỆ THÔNG TIN}
+    \end{center}
+
+    \vspace{1cm}
+
+    % --- PHẦN LOGO NỔI BẬT ---
+    \begin{center}
+        % Phóng to logo lên 6.5cm để tạo sự chú ý tuyệt đối
+        \includegraphics[width=5cm]{logo_sgu.png} 
+    \end{center}
+
+    \vspace{1cm}
+
+    % --- PHẦN MÔN HỌC & ĐỀ TÀI ---
+    \begin{center}
+        \sffamily
+        \color{techgray}
+        {\fontsize{16}{19}\selectfont BÁO CÁO ĐỒ ÁN}\\[0.3cm]
+        {\fontsize{16}{19}\selectfont HỌC PHẦN PHÂN TÍCH THIẾT KẾ HỆ THỐNG THÔNG TIN}
+        
+        \vspace{1cm}
+        
+        % Đường kẻ ngang phân cách mỏng, tinh tế
+        \tikz\draw[sgublue, line width=1.5pt] (0,0) -- (8,0);
+        \vspace{0.8cm}
+        
+        \color{sgublue}
+        \textbf{\fontsize{16}{19}\selectfont Đề tài:}\\[0.3cm]
+        \textbf{\fontsize{22}{28}\selectfont XÂY DỰNG WEBSITE}\\[0.3cm]
+        \textbf{\fontsize{22}{28}\selectfont HỆ THỐNG QUẢN LÝ SIÊU THỊ MINI}
+    \end{center}
+
+
+
+    % --- PHẦN THÔNG TIN SINH VIÊN & GIẢNG VIÊN ---
+    \hspace{1cm}
+    \begin{minipage}{0.9\textwidth}
+        \rmfamily % Font có chân chuẩn mực
+        \fontsize{13}{16}\selectfont
+        \color{black}
+        
+        \textbf{\color{sgublue}Giảng viên hướng dẫn:} \textbf{ThS. Phan Nguyệt Minh} \\[0.8cm]
+        \textbf{\color{sgublue}Nhóm sinh viên thực hiện:} \\[0.2cm]
+        \begin{tabular}{@{}ll@{}}
+            \textbf{1. Trần Tô Thanh Tùng} & \hspace{1cm} MSSV: 3124560096 \\
+            \textbf{2. Lương Kiện Minh} & \hspace{1cm} MSSV: 3124560069 \\
+            \textbf{3. Nguyễn Minh Tú} & \hspace{1cm} MSSV: 3124560094 \\
+            \textbf{4. Đoàn Huỳnh Đăng Khoa} & \hspace{1cm} MSSV: 3124560041 \\
+            \textbf{5. Nguyễn Hữu Thắng} & \hspace{1cm} MSSV: 3124560084 \\
+        \end{tabular}
+    \end{minipage}
+
+    \vspace{1cm}
+
+    % --- CHÂN TRANG ---
+    \begin{center}
+        \rmfamily
+        \fontsize{13}{16}\selectfont
+        \textit{\textbf{Thành phố Hồ Chí Minh - Tháng 1/2026}}
+    \end{center}
+
+\end{titlepage}
+% ==========================================
+% BẮT ĐẦU NỘI DUNG CHÍNH CỦA BÁO CÁO
+% ==========================================
+% === LỜI NÓI ĐẦU ===
+\newpage\thispagestyle{empty}\mbox{}\newpage
+\begin{center}
+    \textbf{\fontsize{16}{19.2}\selectfont LỜI NÓI ĐẦU}
+\end{center}
+\vspace{0.5cm}
+
+\begin{sloppypar}
+Trong bối cảnh chuyển đổi số đang diễn ra mạnh mẽ, mô hình siêu thị mini ngày càng khẳng định vai trò thiết yếu trong chuỗi cung ứng bán lẻ. Tuy nhiên, việc duy trì phương thức quản lý thủ công đang bộc lộ nhiều hạn chế như thất thoát hàng hóa, khó khăn trong kiểm soát tồn kho và hiệu suất vận hành chưa tối ưu. Nhận thức sâu sắc yêu cầu thực tiễn đó, nhóm chúng em đã quyết định chọn đề tài \textbf{“Xây dựng Website Hệ thống Quản lý Siêu thị Mini”} làm đồ án kết thúc học phần. Đây không chỉ là cơ hội để tổng hợp, vận dụng những kiến thức chuyên ngành Phân tích và Thiết kế Hệ thống Thông tin vào thực tế, mà còn là bước đệm để nhóm rèn luyện tư duy logic, kỹ năng giải quyết vấn đề và tinh thần làm việc nhóm.
+
+Để hoàn thành đồ án này, chúng em xin gửi lời cảm ơn chân thành và sâu sắc nhất đến \textbf{ThS. Phan Nguyệt Minh}. Trong suốt quá trình học tập và nghiên cứu, sự hướng dẫn tận tình, những định hướng phương pháp luận khoa học cùng những lời động viên quý báu của Cô đã giúp chúng em tháo gỡ nhiều vướng mắc, từng bước hoàn thiện tư duy phát triển phần mềm và kiến trúc hệ thống.
+
+Dù đã nỗ lực dành nhiều tâm huyết để phân tích, thiết kế và phát triển các phân hệ cốt lõi như quản lý kho, bán hàng (POS), và báo cáo thống kê, song do những hạn chế nhất định về mặt thời gian và kinh nghiệm thực tiễn, báo cáo đồ án chắc chắn khó tránh khỏi những thiếu sót. Chúng em rất mong nhận được những nhận xét, góp ý quý báu từ Cô cùng quý thầy cô trong khoa để hệ thống được hoàn thiện hơn và có khả năng ứng dụng cao trong thực tế.
+
+Cuối cùng, chúng em kính chúc Cô dồi dào sức khỏe, hạnh phúc và gặt hái thêm nhiều thành công trên con đường sự nghiệp “trồng người”, tiếp tục dìu dắt các thế hệ sinh viên Trường Đại học Sài Gòn tự tin hội nhập và phát triển.
+\end{sloppypar}
+
+\begin{flushright}
+    \textit{Xin chân thành cảm ơn!}\\
+    \textbf{Nhóm thực hiện}
+\end{flushright}
+\vspace{1cm}
+
+\end{document}
