@@ -61,5 +61,6 @@
 .btn-action.ship { background-color: #4f46e5; }
 .btn-action.complete { background-color: #059669; }
 .btn-action.cancel { background-color: #dc2626; }
+.btn-action.return { background-color: #f59e0b; }
 
 .btn-action:hover { opacity: 0.9; }

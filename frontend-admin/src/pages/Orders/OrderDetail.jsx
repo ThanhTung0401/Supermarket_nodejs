@@ -46,8 +46,12 @@ const OrderDetail = ({ order, onClose, onUpdate }) => {
                         <button className="btn-action cancel" onClick={() => handleUpdateStatus('CANCELLED')}>Hủy đơn</button>
                     </>
                 );
+            case 'COMPLETED':
+                return (
+                    <button className="btn-action return" onClick={() => handleUpdateStatus('RETURNED')}>Trả hàng</button>
+                );
             default:
-                return null; // COMPLETED hoặc CANCELLED không có hành động tiếp theo
+                return null; // CANCELLED hoặc RETURNED không có hành động tiếp theo
         }
     };
 

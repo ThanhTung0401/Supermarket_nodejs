@@ -47,6 +47,7 @@ enum OrderStatus {
   SHIPPING   // Đang giao
   COMPLETED  // Đã nhận / Đã thanh toán xong (POS mặc định là cái này)
   CANCELLED  // Đã hủy
+  RETURNED   // Đã trả hàng
 }
 
 // Nguồn đơn hàng

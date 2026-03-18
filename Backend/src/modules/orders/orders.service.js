@@ -125,6 +125,62 @@ export class OrdersService{
                     });
                 }
             }
+            
+            // LOGIC 4: TRẢ HÀNG (COMPLETED -> RETURNED)
+            if (status === 'RETURNED' && order.status === 'COMPLETED') {
+                // 1. Tạo ReturnInvoice
+                const returnInvoice = await tx.returnInvoice.create({
+                    data: {
+                        invoice: {
+                            connect: { id: order.id }
+                        },
+                        reason: "Khách hàng trả hàng",
+                        refundAmount: order.totalAmount,
+                    }
+                });
+
+                for (const item of order.items) {
+                    // 2. Tạo ReturnItem
+                    await tx.returnItem.create({
+                        data: {
+                            returnInvoiceId: returnInvoice.id,
+                            productId: item.productId,
+                            quantity: item.quantity,
+                        }
+                    });
+
+                    // 3. Cộng lại số lượng vào kho
+                    const currentProduct = await tx.product.findUnique({ where: { id: item.productId } });
+                    await tx.product.update({
+                        where: { id: item.productId },
+                        data: { stockQuantity: { increment: item.quantity } }
+                    });
+
+                    // 4. Ghi StockLog
+                    await tx.stockLog.create({
+                        data: {
+                            productId: item.productId,
+                            staffId: staffId,
+                            changeType: 'RETURN',
+                            changeQuantity: item.quantity,
+                            currentStock: currentProduct.stockQuantity + item.quantity,
+                            invoiceId: order.id, // Vẫn ghi nhận cho invoice gốc
+                            returnInvoiceId: returnInvoice.id, // Thêm liên kết tới phiếu trả
+                            note: `Trả hàng cho đơn #${order.code}`
+                        }
+                    });
+                }
+
+                // 5. Trừ điểm tích lũy của khách hàng
+                if (order.customerId) {
+                    const pointsToDeduct = Math.floor(Number(order.totalAmount) / 10000);
+                    await tx.customer.update({
+                        where: { id: order.customerId },
+                        data: { points: { decrement: pointsToDeduct } }
+                    });
+                }
+            }
+
 
             // Cập nhật trạng thái và người duyệt
             return tx.invoice.update({
