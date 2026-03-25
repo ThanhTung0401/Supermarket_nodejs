@@ -1,4 +1,38 @@
-# Supermarket Management System API
+# Supermarket Management System
+
+## 🛠️ Tech Stack
+
+### Backend
+| Thành phần | Công nghệ |
+|---|---|
+| Runtime | **Node.js** |
+| Framework | **Express.js** |
+| ORM | **Prisma** |
+| Database | **PostgreSQL** |
+| Authentication | **JWT (jsonwebtoken)** |
+| Password hashing | **bcryptjs** |
+
+### Frontend – Admin Panel (`frontend-admin`)
+| Thành phần | Công nghệ |
+|---|---|
+| Framework | **React 19** |
+| Build tool | **Vite** |
+| Routing | **React Router DOM v7** |
+| HTTP client | **Axios** |
+| Charts | **Recharts** |
+| Styling | **Sass (SCSS)** |
+
+### Frontend – Customer Store (`frontend-store`)
+| Thành phần | Công nghệ |
+|---|---|
+| Framework | **React 18** |
+| Build tool | **Vite** |
+| Routing | **React Router DOM v6** |
+| HTTP client | **Axios** |
+
+---
+
+## 📖 API Documentation
 
 Tài liệu API chi tiết cho hệ thống quản lý siêu thị (Backend Node.js + Express + Prisma + PostgreSQL).
 
